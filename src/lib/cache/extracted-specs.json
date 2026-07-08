@@ -1,0 +1,2327 @@
+{
+  "aethera-hero": {
+    "animations": [
+      {
+        "definition": "opacity 0 to 1, translateY 20px to 0, duration 0.8s, ease-out",
+        "name": "fade-rise"
+      },
+      {
+        "definition": "same as fade-rise but with 0.2s delay",
+        "name": "fade-rise-delay"
+      },
+      {
+        "definition": "same as fade-rise but with 0.4s delay",
+        "name": "fade-rise-delay-2"
+      }
+    ],
+    "businessName": "Aethera",
+    "colors": {
+      "accent": null,
+      "bg": "#FFFFFF",
+      "border": null,
+      "muted": "#6F6F6F",
+      "surface": null,
+      "text": "#000000"
+    },
+    "ctaText": "Begin Journey",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Instrument Serif",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Aethera\u00ae",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4"
+      ]
+    },
+    "navItems": [
+      "Home",
+      "Studio",
+      "About",
+      "Journal",
+      "Reach Us"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": "#FFFFFF",
+        "body": "Building platforms for brilliant minds, fearless makers, and thoughtful souls. Through the noise, we craft digital havens for deep work and pure flows.",
+        "color": "#000000",
+        "cta": "Begin Journey",
+        "emphasizedWords": [
+          "silence,",
+          "the eternal."
+        ],
+        "headline": "Beyond silence, we build the eternal.",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "glassmorphic aesthetic",
+    "tagline": null
+  },
+  "aetheris-voyage-hero": {
+    "animations": [
+      {
+        "definition": "Word-by-word blur-in animation with staggered delays",
+        "name": "blur-text"
+      },
+      {
+        "definition": "Initial blur and fade-in with upward movement",
+        "name": "fade-rise"
+      }
+    ],
+    "businessName": "Aetheris Voyage",
+    "colors": {
+      "accent": null,
+      "bg": "#000000",
+      "border": null,
+      "muted": "#ffffff",
+      "surface": null,
+      "text": "#ffffff"
+    },
+    "ctaText": "Start Your Voyage",
+    "fonts": {
+      "accentFont": null,
+      "body": "Barlow",
+      "display": "Instrument Serif",
+      "weights": [
+        300,
+        400,
+        500,
+        600
+      ]
+    },
+    "logo": "a",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_080021_d598092b-c4c2-4e53-8e46-94cf9064cd50.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_094631_d30ab262-45ee-4b7d-99f3-5d5848c8ef13.mp4"
+      ]
+    },
+    "navItems": [
+      "Home",
+      "Voyages",
+      "Worlds",
+      "Innovation",
+      "Plan Launch"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": "Discover the universe in ways once unimaginable. Our pioneering vessels and breakthrough engineering bring deep-space exploration within reach\u2014secure and extraordinary.",
+        "color": "#ffffff",
+        "cta": "Start Your Voyage",
+        "emphasizedWords": [],
+        "headline": "Venture Past Our Sky Across the Universe",
+        "id": "hero-section",
+        "items": [
+          {
+            "description": "Average Videos Watch Time",
+            "icon": "clock",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "34.5 Min"
+          },
+          {
+            "description": "Users Across the Globe",
+            "icon": "globe",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "2.8B+"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_080021_d598092b-c4c2-4e53-8e46-94cf9064cd50.mp4",
+        "styleHints": "letter-spacing:-4px;line-height:0.8",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, border-radius:9999px",
+    "tagline": null
+  },
+  "asme-hero": {
+    "animations": [
+      {
+        "definition": "500ms requestAnimationFrame-based fade-in on load/loop start, 500ms fade-out when 0.55 seconds remain before the video ends",
+        "name": "video-fade"
+      }
+    ],
+    "businessName": "Asme",
+    "colors": {
+      "accent": null,
+      "bg": "#000000",
+      "border": null,
+      "muted": "#ffffff66",
+      "surface": null,
+      "text": "#ffffff"
+    },
+    "ctaText": "Sign Up",
+    "fonts": {
+      "accentFont": null,
+      "body": null,
+      "display": "Instrument Serif",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Asme",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
+      ]
+    },
+    "navItems": [
+      "Features",
+      "Pricing",
+      "About"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "ken-burns",
+        "bg": "#000000",
+        "body": "Stay updated with the latest news and insights. Subscribe to our newsletter today and never miss out on exciting updates.",
+        "color": "#ffffff",
+        "cta": "Manifesto",
+        "emphasizedWords": [],
+        "headline": "Built for the curious",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4",
+        "styleHints": "liquid-glass UI effect, translate-y-[17%], translate-y-[20%]",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "design-rocket-email-hero": {
+    "animations": [
+      {
+        "definition": "hover:-translate-y-0.5 transition-all duration-200 plus background-color change on hover",
+        "name": "button-hover"
+      },
+      {
+        "definition": "wrapper overflow-hidden rounded-[14px] group; video scales on hover via transition-transform duration-700 group-hover:scale-[1.03]",
+        "name": "video-card-hover"
+      },
+      {
+        "definition": "smooth color transitions via transition-colors",
+        "name": "footer-hover"
+      }
+    ],
+    "businessName": "Design Rocket",
+    "colors": {
+      "accent": "#DCFF00",
+      "bg": "#050505",
+      "border": "#8F8E88",
+      "muted": "#83837D",
+      "surface": "#111111",
+      "text": "#F2F2F2"
+    },
+    "ctaText": "Enroll Now",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Instrument Serif",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Design Rocket",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260419_064822_f120e48a-d545-45dd-a02d-facb07829888.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260419_065931_e3ca7b53-d32e-4ad5-81de-dc9d6fcfda6d.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260417_110451_9f82b157-dc92-4a9f-a341-c25594ec20e1.mp4"
+      ]
+    },
+    "navItems": [],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": "Enroll Now",
+        "emphasizedWords": [],
+        "headline": "Learn to lead AI\nand unlock new value",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260419_064822_f120e48a-d545-45dd-a02d-facb07829888.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": "CERTIFICATES"
+  },
+  "designpro-hero": {
+    "animations": [
+      {
+        "definition": "Gradient sweeps across text continuously from left to right with 100-degree spread, 3-second animation speed",
+        "name": "shiny-gradient"
+      }
+    ],
+    "businessName": "DesignPro",
+    "colors": {
+      "accent": "#64CEFB",
+      "bg": "#000000",
+      "border": null,
+      "muted": "#ffffff80",
+      "surface": null,
+      "text": "#ffffff"
+    },
+    "ctaText": "Apply for Next Enrollment",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Circular design with a white border (2px), containing a smaller filled white circle inside, followed by \"DesignPro\" text",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_105406_16f4600d-7a92-4292-b96e-b19156c7830a.mp4"
+      ]
+    },
+    "navItems": [
+      "Home",
+      "About Us",
+      "Courses",
+      "Instructors",
+      "Testimonials",
+      "Blog",
+      "Contact us"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "ken-burns",
+        "bg": "#000000",
+        "body": "We deliver transformative programs that empower emerging product designers with cutting-edge expertise and vision to thrive globally.",
+        "color": "#ffffff",
+        "cta": "Apply for Next Enrollment",
+        "emphasizedWords": [
+          "Product Leader."
+        ],
+        "headline": "Become\nProduct Leader.",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_105406_16f4600d-7a92-4292-b96e-b19156c7830a.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "digital-epoch-hero": {
+    "animations": [
+      {
+        "definition": "Text fades in and slides up slightly",
+        "name": "fade-rise"
+      },
+      {
+        "definition": "Button scales on hover",
+        "name": "hover-scale"
+      },
+      {
+        "definition": "Navbar fades in and slides up with delay",
+        "name": "nav-fade-slide"
+      },
+      {
+        "definition": "Infinite horizontal scrolling with pause on hover",
+        "name": "marquee-scroll"
+      }
+    ],
+    "businessName": "Digital Epoch",
+    "colors": {
+      "accent": null,
+      "bg": "#f9fafb",
+      "border": "#e2e8f0",
+      "muted": "#64748b",
+      "surface": "#ffffff",
+      "text": "#0a1b33"
+    },
+    "ctaText": "Contact Us",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Outfit",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "\u2726",
+    "media": {
+      "imageUrls": [
+        "https://svgl.app/procure.svg",
+        "https://svgl.app/shopify.svg",
+        "https://svgl.app/blender.svg",
+        "https://svgl.app/figma.svg",
+        "https://svgl.app/spotify.svg",
+        "https://svgl.app/lottielab.svg",
+        "https://svgl.app/google-cloud.svg",
+        "https://svgl.app/bing.svg"
+      ],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260505_101331_74f9b798-3f00-4e86-8a01-377aa16ffeaa.mp4"
+      ]
+    },
+    "navItems": [
+      "Products",
+      "Docs"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": "Designing products, powering ecosystems and laying the foundation of a decentralized web for enterprises, builders and communities alike.",
+        "color": null,
+        "cta": "Contact Us",
+        "emphasizedWords": [],
+        "headline": "Foundation of the<br />new digital epoch",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260505_101331_74f9b798-3f00-4e86-8a01-377aa16ffeaa.mp4",
+        "styleHints": "letter-spacing:-0.5px;line-height:1.1",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, rounded-[48px], border border-slate-200/50, shadow-[0_40px_100px_-20px_rgba(0,0,0,0.03)], backdrop-blur-2xl, rounded-full buttons, gradient overlays on hover",
+    "tagline": null
+  },
+  "dot-hero": {
+    "animations": [
+      {
+        "definition": "Animate from opacity: 0, scale: 0.95 to opacity: 1, scale: 1 over 1.5s with ease [0.16, 1, 0.3, 1]",
+        "name": "fade-rise"
+      },
+      {
+        "definition": "Animate from opacity: 0, y: 20 to opacity: 1, y: 0 over 1.2s, delay: 0.3, ease [0.16, 1, 0.3, 1]",
+        "name": "fade-up"
+      },
+      {
+        "definition": "Animating opacity from 0 to 1 to 0 over 0.8s, repeating infinitely, linearly",
+        "name": "blink"
+      }
+    ],
+    "businessName": "dot",
+    "colors": {
+      "accent": "#0871E7",
+      "bg": "#F3F4ED",
+      "border": "#000000",
+      "muted": "#1a1a1a",
+      "surface": null,
+      "text": "#1a1a1a"
+    },
+    "ctaText": "Link up",
+    "fonts": {
+      "accentFont": "Nokia Cellphone FC Small",
+      "body": "Inter",
+      "display": "Instrument Serif",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "dot.",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260427_054418_a6d194f0-ac86-4df9-abe5-ded73e596d7c.mp4"
+      ]
+    },
+    "navItems": [
+      "Philosophy",
+      "Trust",
+      "Access",
+      "Tribe"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": "#F3F4ED",
+        "body": "Linked with a single anonymous peer. One message every day. A quiet rhythm in the digital noise.",
+        "color": "#1a1a1a",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "Short notes. <br /> Daily calm.",
+        "id": "hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260427_054418_a6d194f0-ac86-4df9-abe5-ded73e596d7c.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "duolingo-styleguide-hero": {
+    "animations": [],
+    "businessName": "Duolingo",
+    "colors": {
+      "accent": "#58CC02",
+      "bg": "#ffffff",
+      "border": "#E5E5E5",
+      "muted": "#777777",
+      "surface": "#ffffff",
+      "text": "#4B4B4B"
+    },
+    "ctaText": "GET STARTED",
+    "fonts": {
+      "accentFont": null,
+      "body": "Nunito",
+      "display": "Feather Bold",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Duolingo",
+    "media": {
+      "imageUrls": [
+        "https://d35aaqx5ub95lt.cloudfront.net/images/splash/f92d5f2f7d56636846861c458c0d0b6c.svg",
+        "https://images.pexels.com/photos/4145354/pexels-photo-4145354.jpeg?auto=compress&cs=tinysrgb&w=400&h=200&fit=crop",
+        "https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=400&h=200&fit=crop",
+        "https://d35aaqx5ub95lt.cloudfront.net/vendor/59a90a2cedd48b751a8fd22014768fd7.svg",
+        "https://d35aaqx5ub95lt.cloudfront.net/vendor/482fda142ee4abd728ebf4ccce5d3307.svg",
+        "https://d35aaqx5ub95lt.cloudfront.net/vendor/c71db846ffab7e0a74bc6971e34ad82e.svg",
+        "https://d35aaqx5ub95lt.cloudfront.net/vendor/edea4fa18ff3e7d8c0282de3f102aaed.svg",
+        "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop",
+        "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop",
+        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop"
+      ],
+      "videoUrls": []
+    },
+    "navItems": [
+      "Colors",
+      "Type",
+      "Buttons",
+      "Cards",
+      "Components"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": "A comprehensive visual reference for the Duolingo design system covering colors, typography, button variants, cards, and UI components.",
+        "color": null,
+        "cta": "GET STARTED",
+        "emphasizedWords": [],
+        "headline": "duolingo design",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": null,
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-centered"
+      }
+    ],
+    "styleHints": "",
+    "tagline": null
+  },
+  "glow-features": {
+    "animations": [
+      {
+        "definition": "Initial state: opacity: 0, y: 30; Animate state: opacity: 1, y: 0; Transition: duration: 0.8, ease: easeOut",
+        "name": "fade-rise"
+      }
+    ],
+    "businessName": null,
+    "colors": {
+      "accent": null,
+      "bg": "#0A0A0B",
+      "border": null,
+      "muted": "#9CA3AF",
+      "surface": "#1A1A1C",
+      "text": "white"
+    },
+    "ctaText": null,
+    "fonts": {
+      "accentFont": null,
+      "body": "font-sans",
+      "display": null,
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": null,
+    "media": {
+      "imageUrls": [],
+      "videoUrls": []
+    },
+    "navItems": [],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "glow-features",
+        "items": [
+          {
+            "description": "My entire desktop setup is built for power. It is silent, durable, and holds my focus.",
+            "icon": "Monitor",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Hardware"
+          },
+          {
+            "description": "Studio is where I define every single pixel. It is the hub for each canvas I deliver.",
+            "icon": "Palette",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Studio"
+          },
+          {
+            "description": "I use Motion to build lively prototypes, bridging the gap between views and code.",
+            "icon": "Zap",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Motion"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "rounded-[40px] border-8 border-transparent background-clip:padding-box, border-box",
+        "type": "features-grid"
+      }
+    ],
+    "styleHints": "dark-themed glowing feature card section",
+    "tagline": null
+  },
+  "halo-usd-landing": {
+    "animations": [
+      {
+        "definition": "translating 0 \u2192 -50% on a duplicated track for seamless looping",
+        "name": "marquee"
+      },
+      {
+        "definition": "translating 0 \u2192 -50% on a duplicated track for seamless looping",
+        "name": "backers-marquee"
+      }
+    ],
+    "businessName": "Halo",
+    "colors": {
+      "accent": "#000000",
+      "bg": "#F5F5F5",
+      "border": null,
+      "muted": "#000000B3",
+      "surface": null,
+      "text": "#000000"
+    },
+    "ctaText": "Join us",
+    "fonts": {
+      "accentFont": null,
+      "body": "TT Norms Pro",
+      "display": "TT Norms Pro",
+      "weights": [
+        400,
+        600
+      ]
+    },
+    "logo": "Halo",
+    "media": {
+      "imageUrls": [
+        "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260423_164207_f243351d-ed59-48ec-83a0-a5e996bdbe3c.png&w=1280&q=85"
+      ],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_183428_ab5e672a-f608-4dcb-b319-f3e040f02e2d.mp4"
+      ]
+    },
+    "navItems": [
+      "Network",
+      "Ecosystem",
+      "Rewards",
+      "Help",
+      "News"
+    ],
+    "promptType": "landing-page",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": "An automated, reward-powered digital dollar built for native passive earnings and effortless connection into DeFi.",
+        "color": null,
+        "cta": "Join us",
+        "emphasizedWords": [],
+        "headline": "Your Wealth\nWorks",
+        "id": "hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4",
+        "styleHints": "letterSpacing: '-0.04em'",
+        "type": "hero-video"
+      },
+      {
+        "animation": "none",
+        "bg": "#F5F5F5",
+        "body": "USD Halo is a reward-earning dollar coin that lets your savings grow while remaining tied to the U.S. dollar.",
+        "color": null,
+        "cta": "Discover it",
+        "emphasizedWords": [],
+        "headline": "Meet USD Halo.",
+        "id": "info-section",
+        "items": [
+          {
+            "description": "Gain steady returns as your dollar tokens are routed into top-performing DeFi strategies.",
+            "icon": null,
+            "mediaUrl": "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260423_164207_f243351d-ed59-48ec-83a0-a5e996bdbe3c.png&w=1280&q=85",
+            "meta": null,
+            "title": "Savings that bloom"
+          },
+          {
+            "description": "Keep fully dollar-anchored with on-demand access to funds \u2014 no lockups or waits.",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Always fluid,\nalways pegged."
+          },
+          {
+            "description": "Skip the task of tuning positions yourself. USD Halo runs in the background for you.",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Fully\nautomated"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "letterSpacing: '-0.03em'",
+        "type": "features-grid"
+      },
+      {
+        "animation": "none",
+        "bg": "#F5F5F5",
+        "body": "Funded by premier partners\nand forward-thinking leaders.",
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "backed-by",
+        "items": [
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Fundamental Labs"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "KUCOIN"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "NGC"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "NxGen"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Matter Labs"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "DEXTools"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "NGRAVE"
+          },
+          {
+            "description": null,
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Polychain"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "partners-row"
+      },
+      {
+        "animation": "none",
+        "bg": "#F5F5F5",
+        "body": "USD Halo powers a wide range of modes for builders, companies and treasuries wanting safe and rewarding stablecoin integrations plus more",
+        "color": null,
+        "cta": "Know more",
+        "emphasizedWords": [],
+        "headline": "Use modes",
+        "id": "use-cases",
+        "items": [
+          {
+            "description": "Lift customer retention by offering USD Halo, a trusted dollar-backed stablecoin with strong yields, letting your patrons earn with zero effort on your platform.",
+            "icon": null,
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_183428_ab5e672a-f608-4dcb-b319-f3e040f02e2d.mp4",
+            "meta": null,
+            "title": "Commerce"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_183428_ab5e672a-f608-4dcb-b319-f3e040f02e2d.mp4",
+        "styleHints": "letterSpacing: '-0.04em'",
+        "type": "features-grid"
+      }
+    ],
+    "styleHints": "negative letter-spacing for headings, font-medium (600) as the heaviest weight",
+    "tagline": null
+  },
+  "haul-footer": {
+    "animations": [
+      {
+        "definition": "fade in from opacity: 0 to opacity: 1",
+        "name": "fade"
+      },
+      {
+        "definition": "slide down and fade in from opacity: 0, y: -20 to opacity: 1, y: 0",
+        "name": "slide-down"
+      },
+      {
+        "definition": "scrollYProgress mapped from [0, 1] to [-50, 150] for y-axis movement",
+        "name": "parallax"
+      }
+    ],
+    "businessName": "HAUL",
+    "colors": {
+      "accent": "#f97316",
+      "bg": "#f8f9fa",
+      "border": "#f3f4f6",
+      "muted": "#6b7280",
+      "surface": "#ffffff",
+      "text": "#1f2937"
+    },
+    "ctaText": null,
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ]
+    },
+    "logo": "HAUL!",
+    "media": {
+      "imageUrls": [
+        "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260430_115327_3f256636-9e63-4885-8d0b-09317dc2b0a5.png&w=1280&q=85",
+        "https://roof-wish-40038865.figma.site/_components/v2/f31fd17907ce60745d45e83a61d44fd3810d5f25/truck_1.8c4bff83.png"
+      ],
+      "videoUrls": []
+    },
+    "navItems": [],
+    "promptType": "footer",
+    "sections": [
+      {
+        "animation": "parallax",
+        "bg": "#ffffff",
+        "body": null,
+        "color": "#1f2937",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "footer",
+        "items": [
+          {
+            "description": "Founding, Platform, Testify",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Company"
+          },
+          {
+            "description": "Get Apple App, Get Google App",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Mobile"
+          },
+          {
+            "description": "Private Data, User Consent",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Contracts"
+          }
+        ],
+        "mediaUrl": "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260430_115327_3f256636-9e63-4885-8d0b-09317dc2b0a5.png&w=1280&q=85",
+        "styleHints": "backdrop-blur-sm, shadow-xl, rounded-2xl mobile rounded-3xl desktop",
+        "type": "footer"
+      }
+    ],
+    "styleHints": "bg-cover bg-center overflow-hidden relative",
+    "tagline": null
+  },
+  "innovation-landing": {
+    "animations": [
+      {
+        "definition": "Fade in/out animation for video background",
+        "name": "fade"
+      },
+      {
+        "definition": "Fade and rise animation for elements",
+        "name": "fade-rise"
+      },
+      {
+        "definition": "Slide in animation from left/right",
+        "name": "slide"
+      }
+    ],
+    "businessName": "Asme",
+    "colors": {
+      "accent": null,
+      "bg": "#000000",
+      "border": null,
+      "muted": "#FFFFFF",
+      "surface": null,
+      "text": "#FFFFFF"
+    },
+    "ctaText": "Sign Up",
+    "fonts": {
+      "accentFont": null,
+      "body": "Instrument Serif",
+      "display": "Instrument Serif",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Asme",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_074625_a81f018a-956b-43fb-9aee-4d1508e30e6a.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260402_054547_9875cfc5-155a-4229-8ec8-b7ba7125cbf8.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4"
+      ]
+    },
+    "navItems": [
+      "Features",
+      "Pricing",
+      "About"
+    ],
+    "promptType": "landing-page",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": null,
+        "body": "Stay updated with the latest news and insights. Subscribe to our newsletter today and never miss out on exciting updates.",
+        "color": null,
+        "cta": "Manifesto",
+        "emphasizedWords": [
+          "all"
+        ],
+        "headline": "Know it then <em>all</em>",
+        "id": "hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_074625_a81f018a-956b-43fb-9aee-4d1508e30e6a.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-video"
+      },
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [
+          "ideas",
+          "minds that then create, build, and inspire"
+        ],
+        "headline": "Pioneering then ideas for minds that then create, build, and inspire.",
+        "id": "about",
+        "items": [],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "about-text"
+      },
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": "We believe in the power of curiosity-driven exploration. Every project starts with a question, and every answer opens a new door to innovation.",
+        "color": null,
+        "cta": "Explore more",
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "featured-video",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260402_054547_9875cfc5-155a-4229-8ec8-b7ba7125cbf8.mp4",
+        "styleHints": "",
+        "type": "custom"
+      },
+      {
+        "animation": "slide",
+        "bg": null,
+        "body": "Every meaningful breakthrough begins at the intersection of disciplined strategy and remarkable creative vision. We operate at that crossroads, turning bold thinking into tangible outcomes that move people and reshape industries. We believe that the best work emerges when curiosity meets conviction. Our process is designed to uncover hidden opportunities and translate them into experiences that resonate long after the first impression.",
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [
+          "Innovation",
+          "Vision"
+        ],
+        "headline": "Innovation x Vision",
+        "id": "philosophy",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4",
+        "styleHints": "",
+        "type": "custom"
+      },
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "What we do",
+        "id": "services",
+        "items": [
+          {
+            "description": "We dig deep into data, culture, and human behavior to surface the insights that drive meaningful, lasting change.",
+            "icon": "ArrowUpRight",
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4",
+            "meta": "Strategy",
+            "title": "Research & Insight"
+          },
+          {
+            "description": "From concept to launch, we obsess over every detail to deliver experiences that feel effortless and look extraordinary.",
+            "icon": "ArrowUpRight",
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4",
+            "meta": "Craft",
+            "title": "Design & Execution"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "features-grid"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect",
+    "tagline": null
+  },
+  "kresna-footer": {
+    "animations": [],
+    "businessName": "Kresna",
+    "colors": {
+      "accent": "#1e4fc0",
+      "bg": "#ffffff",
+      "border": "#e5e7eb",
+      "muted": "#9ca3af",
+      "surface": "#f0f1f5",
+      "text": "#2d3148"
+    },
+    "ctaText": "Subscribe",
+    "fonts": {
+      "accentFont": "Caveat",
+      "body": "DM Sans",
+      "display": "DM Sans",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Kresna",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260503_104800_bc43ae09-f494-43e3-97d7-2f8c1692cfd7.mp4"
+      ]
+    },
+    "navItems": [
+      "How it works",
+      "Features",
+      "Pricing",
+      "Testimonials",
+      "FAQ",
+      "Blog",
+      "About",
+      "Terms and Condition",
+      "Privacy Policy"
+    ],
+    "promptType": "footer",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": "#ffffff",
+        "body": null,
+        "color": "#2d3148",
+        "cta": "Subscribe",
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "kresna-footer",
+        "items": [
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Navigation"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "How it works"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Features"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Pricing"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Testimonials"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "FAQ"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Company"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Blog"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "About"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Terms and Condition"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Privacy Policy"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260503_104800_bc43ae09-f494-43e3-97d7-2f8c1692cfd7.mp4",
+        "styleHints": "box-shadow: 0 12px 40px rgba(21, 76, 189, 0.25); border-radius: 28px; overflow: hidden; grid-template-columns: 350px 1fr; gap: 16px; align-items: stretch; max-width: 1150px; margin: 0 auto; padding: 48px 24px; background: #ffffff;",
+        "type": "footer"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, watermark overlay, responsive grid layout",
+    "tagline": "Smarter sales automation, powered by AI."
+  },
+  "lumina-footer": {
+    "animations": [
+      {
+        "definition": "Fades in the footer with a slight upward movement",
+        "name": "fade"
+      }
+    ],
+    "businessName": "Lumina",
+    "colors": {
+      "accent": null,
+      "bg": null,
+      "border": null,
+      "muted": "#ffffff",
+      "surface": null,
+      "text": "#ffffff"
+    },
+    "ctaText": null,
+    "fonts": {
+      "accentFont": null,
+      "body": "Helvetica Regular",
+      "display": "Helvetica Regular",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "LUMINA",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4"
+      ]
+    },
+    "navItems": [],
+    "promptType": "footer",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": null,
+        "body": null,
+        "color": "#ffffff",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "lumina-footer",
+        "items": [
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "Labs & Workshops, Deep Dive Series, Global Circle, Resource Vault, Future Roadmap",
+            "title": "Discover"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "Origin Story, The Collective, Newsroom Hub, Join the Team",
+            "title": "The Mission"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "Get in Touch, Legal Privacy, User Agreement, Report Concern",
+            "title": "Concierge"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "liquid-glass UI effect",
+        "type": "footer"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect",
+    "tagline": "Lumina provides premium clarity on global events and cosmic wonders - shared with all for free."
+  },
+  "mindloop-landing": {
+    "animations": [
+      {
+        "definition": "Reusable fadeUp helper with staggered delays: initial opacity 0, y 20; whileInView opacity 1, y 0; viewport once with margin -100px; transition duration 0.6s with delay and easeOut",
+        "name": "fadeUp"
+      }
+    ],
+    "businessName": "Mindloop",
+    "colors": {
+      "accent": "#2a9d8f",
+      "bg": "#000000",
+      "border": "#333333",
+      "muted": "#262626",
+      "surface": "#0a0a0a",
+      "text": "#ffffff"
+    },
+    "ctaText": "SUBSCRIBE",
+    "fonts": {
+      "accentFont": "Instrument Serif",
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Mindloop",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4",
+        "https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8"
+      ]
+    },
+    "navItems": [
+      "Home",
+      "How It Works",
+      "Philosophy",
+      "Use Cases"
+    ],
+    "promptType": "landing-page",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": "Join our feed for meaningful updates, news around technology and a shared journey toward depth and direction.",
+        "color": "#ffffff",
+        "cta": "SUBSCRIBE",
+        "emphasizedWords": [
+          "Inspired"
+        ],
+        "headline": "Get Inspired with Us",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4",
+        "styleHints": "letter-spacing:-2px",
+        "type": "hero-video"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": "If you don't answer the questions, someone else will.",
+        "color": "#ffffff",
+        "cta": null,
+        "emphasizedWords": [
+          "changed."
+        ],
+        "headline": "Search has changed. Have you?",
+        "id": "search-changed-section",
+        "items": [
+          {
+            "description": "",
+            "icon": "icon-chatgpt.png",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "ChatGPT"
+          },
+          {
+            "description": "",
+            "icon": "icon-perplexity.png",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Perplexity"
+          },
+          {
+            "description": "",
+            "icon": "icon-google.png",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Google AI"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "features-grid"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": "We're building a space where curiosity meets clarity \u2014 where readers find depth, writers find reach, and every newsletter becomes a conversation worth having. A platform where content, community, and insight flow together \u2014 with less noise, less friction, and more meaning for everyone involved.",
+        "color": "#ffffff",
+        "cta": null,
+        "emphasizedWords": [
+          "curiosity",
+          "meets",
+          "clarity"
+        ],
+        "headline": null,
+        "id": "mission-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4",
+        "styleHints": "letter-spacing:-1px",
+        "type": "custom"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": null,
+        "color": "#ffffff",
+        "cta": null,
+        "emphasizedWords": [
+          "meaningful"
+        ],
+        "headline": "The platform for meaningful content",
+        "id": "solution-section",
+        "items": [
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Curated Feed"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Writer Tools"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Community"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": null,
+            "meta": "",
+            "title": "Distribution"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4",
+        "styleHints": "",
+        "type": "features-grid"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": null,
+        "color": "#ffffff",
+        "cta": "Subscribe Now",
+        "emphasizedWords": [],
+        "headline": "Start Your Journey",
+        "id": "cta-section",
+        "items": [],
+        "mediaUrl": "https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8",
+        "styleHints": "",
+        "type": "cta-band"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": null,
+        "color": "#ffffff",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "footer",
+        "items": [],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "footer"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect",
+    "tagline": null
+  },
+  "orbis-nft-landing": {
+    "animations": [],
+    "businessName": "Orbis",
+    "colors": {
+      "accent": "#6FFF00",
+      "bg": "#010828",
+      "border": null,
+      "muted": null,
+      "surface": null,
+      "text": "#EFF4FF"
+    },
+    "ctaText": "SEE ALL CREATORS",
+    "fonts": {
+      "accentFont": "Condiment",
+      "body": "System monospace",
+      "display": "Anton",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Orbis.Nft",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_045634_e1c98c76-1265-4f5c-882a-4276f2080894.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_151551_992053d1-3d3e-4b8c-abac-45f22158f411.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_053923_22c0a6a5-313c-474c-85ff-3b50d25e944a.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_054411_511c1b7a-fb2f-42ef-bf6c-32c0b1a06e79.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_055427_ac7035b5-9f3b-4289-86fc-941b2432317d.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_055729_72d66327-b59e-4ae9-bb70-de6ccb5ecdb0.mp4"
+      ]
+    },
+    "navItems": [
+      "Homepage",
+      "Gallery",
+      "Buy NFT",
+      "FAQ",
+      "Contact"
+    ],
+    "promptType": "landing-page",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [
+          "( its )"
+        ],
+        "headline": "Beyond earth\nand ( its ) familiar boundaries",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_045634_e1c98c76-1265-4f5c-882a-4276f2080894.mp4",
+        "styleHints": "rounded-b-[32px]",
+        "type": "hero-video"
+      },
+      {
+        "animation": "none",
+        "bg": null,
+        "body": "A digital object fixed beyond time and place. An exploration of distance, form, and silence in space",
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "Hello!\nI'm orbis",
+        "id": "about-intro",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_151551_992053d1-3d3e-4b8c-abac-45f22158f411.mp4",
+        "styleHints": "",
+        "type": "hero-video"
+      },
+      {
+        "animation": "none",
+        "bg": "#010828",
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [
+          "Space"
+        ],
+        "headline": "Collection of\n  Space objects",
+        "id": "nft-collection-grid",
+        "items": [
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_053923_22c0a6a5-313c-474c-85ff-3b50d25e944a.mp4",
+            "meta": "",
+            "title": "RARITY SCORE: 8.7/10"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_054411_511c1b7a-fb2f-42ef-bf6c-32c0b1a06e79.mp4",
+            "meta": "",
+            "title": "RARITY SCORE: 9/10"
+          },
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_055427_ac7035b5-9f3b-4289-86fc-941b2432317d.mp4",
+            "meta": "",
+            "title": "RARITY SCORE: 8.2/10"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "features-grid"
+      },
+      {
+        "animation": "none",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "JOIN US.\nREVEAL WHAT'S HIDDEN.\nDEFINE WHAT'S NEXT.\nFOLLOW THE SIGNAL.",
+        "id": "cta-final-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_055729_72d66327-b59e-4ae9-bb70-de6ccb5ecdb0.mp4",
+        "styleHints": "",
+        "type": "cta-band"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "portal-hero": {
+    "animations": [
+      {
+        "definition": "From: opacity: 0; filter: blur(20px); transform: translateY(40px). To: opacity: 1; filter: blur(0); transform: translateY(0)",
+        "name": "blurFadeUp"
+      }
+    ],
+    "businessName": "Portal",
+    "colors": {
+      "accent": null,
+      "bg": "#000000",
+      "border": "#333333",
+      "muted": "#A0A0A0",
+      "surface": null,
+      "text": "#FFFFFF"
+    },
+    "ctaText": "Watch Now",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        300,
+        400,
+        500,
+        600,
+        700
+      ]
+    },
+    "logo": "Portal",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_094145_4a271a6c-3869-4f1c-8aa7-aeb0cb227994.mp4"
+      ]
+    },
+    "navItems": [
+      "Movies",
+      "TV Series",
+      "Editor's Pick",
+      "Interviews",
+      "User Reviews"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "blur-fade-up",
+        "bg": "#000000",
+        "body": "A voyage through forgotten realms, where past and future intertwine.",
+        "color": "#FFFFFF",
+        "cta": "Watch Now",
+        "emphasizedWords": [],
+        "headline": "Step Through. Work Smarter.",
+        "id": "hero-section",
+        "items": [
+          {
+            "description": "",
+            "icon": "Star",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "8.7/10 IMDB"
+          },
+          {
+            "description": "",
+            "icon": "Clock",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "132 min"
+          },
+          {
+            "description": "",
+            "icon": "Calendar",
+            "mediaUrl": null,
+            "meta": "",
+            "title": "April, 2025"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_094145_4a271a6c-3869-4f1c-8aa7-aeb0cb227994.mp4",
+        "styleHints": "letter-spacing:-0.04em",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, backdrop-blur-xl, mask-image: linear-gradient(to top, black 0%, transparent 45%)",
+    "tagline": null
+  },
+  "power-ai-hero": {
+    "animations": [
+      {
+        "definition": "0.5s fade-in at start, 0.5s fade-out at end, using requestAnimationFrame. On ended, opacity resets to 0, waits 100ms, then replays from 0",
+        "name": "fade-loop"
+      },
+      {
+        "definition": "translateX(0%) \u2192 translateX(-50%), 20s linear infinite",
+        "name": "marquee"
+      }
+    ],
+    "businessName": "Power AI",
+    "colors": {
+      "accent": null,
+      "bg": "hsl(260, 87%, 3%)",
+      "border": null,
+      "muted": "hsl(40, 6%, 82%)",
+      "surface": null,
+      "text": "hsl(40, 6%, 95%)"
+    },
+    "ctaText": "Schedule a Consult",
+    "fonts": {
+      "accentFont": null,
+      "body": "Geist Sans",
+      "display": "General Sans",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "src/assets/logo.png",
+    "media": {
+      "imageUrls": [
+        "src/assets/logo.png"
+      ],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4"
+      ]
+    },
+    "navItems": [
+      "Features",
+      "Solutions",
+      "Plans",
+      "Learning"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": "hsl(260, 87%, 3%)",
+        "body": "The most powerful AI ever deployed / in talent acquisition",
+        "color": "hsl(40, 6%, 95%)",
+        "cta": "Schedule a Consult",
+        "emphasizedWords": [
+          "AI"
+        ],
+        "headline": "Power AI",
+        "id": "power-ai-hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4",
+        "styleHints": "text-[220px] font-normal leading-[1.02] tracking-[-0.024em]",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, w-[984px] h-[527px] opacity-90 bg-gray-950 blur-[82px]",
+    "tagline": null
+  },
+  "prisma-landing": {
+    "animations": [
+      {
+        "definition": "Splits text by spaces, each word slides up (y:20 to 0) with staggered delay",
+        "name": "WordsPullUp"
+      },
+      {
+        "definition": "Takes an array of {text, className} segments, splits all into individual words preserving per-word className with pull-up animation",
+        "name": "WordsPullUpMultiStyle"
+      },
+      {
+        "definition": "Each character's opacity transitions from 0.2 to 1 based on scroll position",
+        "name": "AnimatedLetter"
+      }
+    ],
+    "businessName": "Prisma",
+    "colors": {
+      "accent": "#DEDBC8",
+      "bg": "#000000",
+      "border": null,
+      "muted": "#DEDBC8",
+      "surface": "#101010",
+      "text": "#E1E0CC"
+    },
+    "ctaText": "Join the lab",
+    "fonts": {
+      "accentFont": "Instrument Serif",
+      "body": "Almarai",
+      "display": "Almarai",
+      "weights": [
+        300,
+        400,
+        700,
+        800
+      ]
+    },
+    "logo": null,
+    "media": {
+      "imageUrls": [
+        "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171918_4a5edc79-d78f-4637-ac8b-53c43c220606.png&w=1280&q=85",
+        "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171741_ed9845ab-f5b2-4018-8ce7-07cc01823522.png&w=1280&q=85",
+        "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171809_f56666dc-c099-4778-ad82-9ad4f209567b.png&w=1280&q=85"
+      ],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4",
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4"
+      ]
+    },
+    "navItems": [
+      "Our story",
+      "Collective",
+      "Workshops",
+      "Programs",
+      "Inquiries"
+    ],
+    "promptType": "landing-page",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": "#000000",
+        "body": "Prisma is a worldwide network of visual artists, filmmakers and storytellers bound not by place, status or labels but by passion and hunger to unlock potential through our unique perspectives.",
+        "color": "#E1E0CC",
+        "cta": "Join the lab",
+        "emphasizedWords": [],
+        "headline": "Prisma",
+        "id": "hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4",
+        "styleHints": "letter-spacing:-0.07em;line-height:0.85",
+        "type": "hero-video"
+      },
+      {
+        "animation": "fade",
+        "bg": "#000000",
+        "body": "Over the last seven years, I have worked with Parallax, a Berlin-based production house that crafts cinema, series, and Noir Studio in Paris. Together, we have created work that has earned international acclaim at several major festivals.",
+        "color": "#DEDBC8",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "I am Marcus Chen, a self-taught director. I have skills in color grading, visual effects, and narrative design.",
+        "id": "about",
+        "items": [],
+        "mediaUrl": null,
+        "styleHints": "letter-spacing:0; line-height:0.95",
+        "type": "about-text"
+      },
+      {
+        "animation": "scale",
+        "bg": "#000000",
+        "body": "Built for pure vision. Powered by art.",
+        "color": "#E1E0CC",
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "Studio-grade workflows for visionary creators.",
+        "id": "features",
+        "items": [
+          {
+            "description": "",
+            "icon": null,
+            "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4",
+            "meta": null,
+            "title": "Your creative canvas."
+          },
+          {
+            "description": "",
+            "icon": "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171918_4a5edc79-d78f-4637-ac8b-53c43c220606.png&w=1280&q=85",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Project Storyboard. (01)"
+          },
+          {
+            "description": "",
+            "icon": "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171741_ed9845ab-f5b2-4018-8ce7-07cc01823522.png&w=1280&q=85",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Smart Critiques. (02)"
+          },
+          {
+            "description": "",
+            "icon": "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171809_f56666dc-c099-4778-ad82-9ad4f209567b.png&w=1280&q=85",
+            "mediaUrl": null,
+            "meta": null,
+            "title": "Immersion Capsule. (03)"
+          }
+        ],
+        "mediaUrl": null,
+        "styleHints": "",
+        "type": "features-grid"
+      }
+    ],
+    "styleHints": "noise overlay, gradient overlay, pill shape navbar, superscript asterisk, character opacity animation, staggered card entrance",
+    "tagline": null
+  },
+  "rivr-hero": {
+    "animations": [
+      {
+        "definition": "Initial opacity 0, scale 0.98; animate to opacity 1, scale 1; transition duration 0.8, delay 0.2",
+        "name": "fade-rise"
+      }
+    ],
+    "businessName": "RIVR",
+    "colors": {
+      "accent": "rgba(30,50,90,0.8)",
+      "bg": "#f0f0f0",
+      "border": "rgba(255,255,255,0.2)",
+      "muted": "#5E6470",
+      "surface": "rgba(255,255,255,0.1)",
+      "text": "#5E6470"
+    },
+    "ctaText": "Book Demo",
+    "fonts": {
+      "accentFont": null,
+      "body": "Helvetica Regular",
+      "display": "Helvetica Regular",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "RIVR",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260428_193507_4286c423-2fd9-4efd-92bd-91a939453fc1.mp4"
+      ]
+    },
+    "navItems": [
+      "Ecosystem",
+      "Economics",
+      "Developers",
+      "Governance"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": "#f0f0f0",
+        "body": "Access Smart Vaults, stake RIVR, NFTs, transform rigid holdings into liquid cash instantly.",
+        "color": "#5E6470",
+        "cta": "Book Demo",
+        "emphasizedWords": [],
+        "headline": "Fluid Asset Streams",
+        "id": "hero",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260428_193507_4286c423-2fd9-4efd-92bd-91a939453fc1.mp4",
+        "styleHints": "glassmorphism UI effect, backdrop-blur-xl, rounded-[1.5rem]",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "glassmorphism UI effect, backdrop-blur-xl, rounded-[1.5rem]",
+    "tagline": null
+  },
+  "sentinel-ai-hero": {
+    "animations": [
+      {
+        "definition": "0%: opacity: 0, transform: translateY(20px), filter: blur(4px); 100%: opacity: 1, transform: translateY(0), filter: blur(0)",
+        "name": "fade-up"
+      },
+      {
+        "definition": "0%: opacity: 0; 100%: opacity: 1",
+        "name": "fade-in"
+      }
+    ],
+    "businessName": "SENTINEL AI",
+    "colors": {
+      "accent": "#00ff41",
+      "bg": "#0a0a0a",
+      "border": "#333333",
+      "muted": "#282828",
+      "surface": "#0a0a0a",
+      "text": "#f4f4f4"
+    },
+    "ctaText": "Book a Call",
+    "fonts": {
+      "accentFont": null,
+      "body": "Sora",
+      "display": "Sora",
+      "weights": [
+        300,
+        400,
+        500,
+        600,
+        700
+      ]
+    },
+    "logo": "SENTINEL",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": []
+    },
+    "navItems": [
+      "Services",
+      "About Us",
+      "Projects",
+      "Team",
+      "Contacts"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-up",
+        "bg": "#080808",
+        "body": "Enterprise security systems built in days. AI-powered surveillance deployed with zero-trust architecture. Smart access control set up for your entire facility. All of it done right, not just fast.",
+        "color": "#f4f4f4",
+        "cta": "Book a Call",
+        "emphasizedWords": [
+          "AI"
+        ],
+        "headline": "SENTINEL AI",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://prod.spline.design/Slk6b8kz3LRlKiyk/scene.splinecode",
+        "styleHints": "text-[clamp(3rem,8vw,6rem)] font-bold leading-[1.05] tracking-[-0.05em] uppercase",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "pointer-events-none on content container, pointer-events-auto on buttons, fluid typography with clamp(), content anchored to bottom-left",
+    "tagline": "We implement security correctly."
+  },
+  "skyelite-hero": {
+    "animations": [],
+    "businessName": "SkyElite",
+    "colors": {
+      "accent": "#202A36",
+      "bg": "#f9fafb",
+      "border": null,
+      "muted": "#6b7280",
+      "surface": null,
+      "text": "#111827"
+    },
+    "ctaText": "Book Now",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ]
+    },
+    "logo": "SkyElite",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_091828_e240eb17-6edc-4129-ad9d-98678e3fd238.mp4"
+      ]
+    },
+    "navItems": [
+      "Start",
+      "Story",
+      "Rates",
+      "Benefits",
+      "FAQ"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_091828_e240eb17-6edc-4129-ad9d-98678e3fd238.mp4",
+        "styleHints": "",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "stellar-ai-hero": {
+    "animations": [
+      {
+        "definition": "from opacity: 0; transform: translateY(30px) to opacity: 1; transform: translateY(0)",
+        "name": "fadeInUp"
+      },
+      {
+        "definition": "from opacity: 0 to opacity: 1",
+        "name": "fadeInOverlay"
+      },
+      {
+        "definition": "from opacity: 0 to opacity: 1 with transform: translate(-50%, -50%)",
+        "name": "fadeInDialog"
+      }
+    ],
+    "businessName": "Stellar.ai",
+    "colors": {
+      "accent": null,
+      "bg": "#ffffff",
+      "border": "#d1d5db",
+      "muted": "#9ca3af",
+      "surface": "#f3f4f6",
+      "text": "#000000"
+    },
+    "ctaText": "Begin Free Trial",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Stellar.ai",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260319_165750_358b1e72-c921-48b7-aaac-f200994f32fb.mp4"
+      ]
+    },
+    "navItems": [
+      "Solutions",
+      "For Teams",
+      "About Us",
+      "Learn Hub"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": "#ffffff",
+        "body": "Intelligent automation syncs with the tools you love to streamline tasks, boost output, and save time.",
+        "color": "#000000",
+        "cta": "Begin Free Trial",
+        "emphasizedWords": [
+          "AI Powers You Up."
+        ],
+        "headline": "Work Smarter. Move Faster.\nAI Powers You Up.",
+        "id": "stellar-hero",
+        "items": [
+          {
+            "description": "Set Up Your AI Workspace",
+            "icon": "BarChart3",
+            "mediaUrl": null,
+            "meta": "purple progress bar at 25%, 4 steps",
+            "title": "Analyse"
+          },
+          {
+            "description": "AI Model Training",
+            "icon": "BookOpen",
+            "mediaUrl": null,
+            "meta": "orange progress at 67%, 4 metrics",
+            "title": "Train"
+          },
+          {
+            "description": "Test Suite Results",
+            "icon": "Users",
+            "mediaUrl": null,
+            "meta": "green success, 127/127 tests",
+            "title": "Testing"
+          },
+          {
+            "description": "Deploy to Production",
+            "icon": "Rocket",
+            "mediaUrl": null,
+            "meta": "4 checklist items, Deploy Now button",
+            "title": "Deploy"
+          }
+        ],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260319_165750_358b1e72-c921-48b7-aaac-f200994f32fb.mp4",
+        "styleHints": "letter-spacing:-2.46px;line-height:0.95",
+        "type": "hero-centered"
+      }
+    ],
+    "styleHints": "",
+    "tagline": null
+  },
+  "transform-data-hero": {
+    "animations": [
+      {
+        "definition": "250ms requestAnimationFrame-based fade-in on load/loop start, 250ms fade-out when 0.55 seconds remain before video end",
+        "name": "custom-fade"
+      }
+    ],
+    "businessName": "Logoipsum",
+    "colors": {
+      "accent": null,
+      "bg": null,
+      "border": null,
+      "muted": "#505050",
+      "surface": "#f8f8f8",
+      "text": "#000000"
+    },
+    "ctaText": "Sign Up",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Fustat",
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": "Logoipsum",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260329_050842_be71947f-f16e-4a14-810c-06e83d23ddb5.mp4"
+      ]
+    },
+    "navItems": [
+      "Platform",
+      "Features",
+      "Projects",
+      "Community",
+      "Contact"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade",
+        "bg": null,
+        "body": "Upload your information and get powerful insights right away. Work smarter and achieve goals effortlessly.",
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": "Transform Data Quickly",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260329_050842_be71947f-f16e-4a14-810c-06e83d23ddb5.mp4",
+        "styleHints": "letter-spacing:-4.8px;line-height:none",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect, texture overlay",
+    "tagline": null
+  },
+  "vex-ventures-hero": {
+    "animations": [
+      {
+        "definition": "Each character starts at opacity: 0 and translateX(-18px), then transitions to opacity: 1 and translateX(0). Each character gets a staggered delay calculated as: (lineIndex * lineLength * charDelay) + (charIndex * charDelay) where charDelay = 30ms. The whole animation starts after 200ms initial delay. Each character transition is 500ms.",
+        "name": "character-animation"
+      },
+      {
+        "definition": "Starts with opacity: 0 and transitions to opacity: 1 after a configurable delay (ms) using a setTimeout + React state. Transition duration is also configurable.",
+        "name": "fade-in"
+      }
+    ],
+    "businessName": "VEX",
+    "colors": {
+      "accent": null,
+      "bg": "#000000",
+      "border": "rgba(255, 255, 255, 0.2)",
+      "muted": "#d1d5db",
+      "surface": null,
+      "text": "#ffffff"
+    },
+    "ctaText": "Start a Chat",
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": "Inter",
+      "weights": [
+        300,
+        400,
+        500,
+        600
+      ]
+    },
+    "logo": "VEX",
+    "media": {
+      "imageUrls": [],
+      "videoUrls": [
+        "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4"
+      ]
+    },
+    "navItems": [
+      "Story",
+      "Investing",
+      "Building",
+      "Advisory"
+    ],
+    "promptType": "hero",
+    "sections": [
+      {
+        "animation": "fade-rise",
+        "bg": null,
+        "body": "We back visionaries and craft ventures that define what comes next.",
+        "color": null,
+        "cta": "Start a Chat",
+        "emphasizedWords": [],
+        "headline": "Shaping tomorrow\nwith vision and action.",
+        "id": "hero-section",
+        "items": [],
+        "mediaUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4",
+        "styleHints": "letterSpacing:-0.04em",
+        "type": "hero-video"
+      }
+    ],
+    "styleHints": "liquid-glass UI effect",
+    "tagline": null
+  },
+  "vize-footer": {
+    "animations": [],
+    "businessName": "Vize",
+    "colors": {
+      "accent": null,
+      "bg": null,
+      "border": null,
+      "muted": null,
+      "surface": null,
+      "text": null
+    },
+    "ctaText": null,
+    "fonts": {
+      "accentFont": null,
+      "body": "Inter",
+      "display": null,
+      "weights": [
+        400,
+        500
+      ]
+    },
+    "logo": null,
+    "media": {
+      "imageUrls": [],
+      "videoUrls": []
+    },
+    "navItems": [],
+    "promptType": "footer",
+    "sections": [
+      {
+        "animation": "none",
+        "bg": null,
+        "body": null,
+        "color": null,
+        "cta": null,
+        "emphasizedWords": [],
+        "headline": null,
+        "id": "footer",
+        "items": [],
+        "mediaUrl": null,
+        "styleHints": "layered card aesthetic, glass-card, liquid-glass",
+        "type": "footer"
+      }
+    ],
+    "styleHints": "layered card aesthetic, glass-card, liquid-glass",
+    "tagline": null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "failed": {
+    "nexora-hero": "timeout",
+    "3d-jack-portfolio-hero": "timeout",
+    "portfolio-cosmic-hero": "timeout",
+    "price-calculator": "timeout",
+    "datacore-booking-hero": "timeout"
+  },
+  "succeeded": [
+    "design-rocket-email-hero",
+    "orbis-nft-landing",
+    "glow-features",
+    "haul-footer",
+    "kresna-footer",
+    "lumina-footer",
+    "vize-footer",
+    "aethera-hero",
+    "asme-hero",
+    "aetheris-voyage-hero",
+    "designpro-hero",
+    "digital-epoch-hero",
+    "dot-hero",
+    "duolingo-styleguide-hero",
+    "portal-hero",
+    "power-ai-hero",
+    "rivr-hero",
+    "vex-ventures-hero",
+    "transform-data-hero",
+    "sentinel-ai-hero",
+    "stellar-ai-hero",
+    "innovation-landing",
+    "prisma-landing",
+    "skyelite-hero",
+    "mindloop-landing",
+    "halo-usd-landing"
+  ]
+}

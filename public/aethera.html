@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Aethera® — Beyond silence, we build the eternal.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#fff;color:#000;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.aethera-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;max-width:1280px;margin:0 auto;opacity:0;animation:fadeRise 0.8s ease-out forwards}
+.aethera-logo{font-family:'Instrument Serif',serif;font-size:1.875rem;color:#000;letter-spacing:-0.02em}
+.aethera-logo sup{font-size:0.5em}
+.aethera-nav-links{display:flex;gap:2rem;align-items:center}
+.aethera-nav-link{font-size:0.875rem;color:#6F6F6F;transition:color 0.2s;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif}
+.aethera-nav-link:first-child{color:#000}
+.aethera-nav-link:hover{color:#000}
+.aethera-nav-cta{background:#000;color:#fff;font-size:0.875rem;font-weight:500;padding:0.625rem 1.5rem;border-radius:9999px;border:none;cursor:pointer;transition:transform 0.2s;font-family:'Inter',sans-serif}
+.aethera-nav-cta:hover{transform:scale(1.03)}
+.aethera-nav-mobile{display:none;flex-direction:column;gap:4px;cursor:pointer}
+@media(max-width:768px){.aethera-nav-links{display:none}.aethera-nav-mobile{display:flex}}
+.aethera-nav-mobile span{width:24px;height:2px;background:#000;border-radius:2px}
+.aethera-hero{position:relative;min-height:100vh;min-height:100dvh;width:100%;overflow:hidden;background:#fff}
+.aethera-hero-video{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.5s ease}
+.aethera-hero-video.loaded{opacity:1}
+.aethera-hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(to bottom,rgba(255,255,255,0.7) 0%,rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,0.9) 100%);pointer-events:none}
+.aethera-hero-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 1.5rem;padding-top:calc(8rem - 75px);padding-bottom:10rem;min-height:100vh;min-height:100dvh}
+.aethera-hero h1{font-family:'Instrument Serif',serif;font-size:clamp(3rem,8vw,6rem);font-weight:400;line-height:0.95;letter-spacing:-2.46px;color:#000;max-width:1280px;opacity:0;animation:fadeRise 0.8s ease-out 0.2s forwards}
+.aethera-hero h1 em{font-style:italic;color:#6F6F6F}
+.aethera-hero-sub{font-size:clamp(1rem,1.5vw,1.125rem);color:#6F6F6F;max-width:640px;margin-top:2rem;line-height:1.6;opacity:0;animation:fadeRise 0.8s ease-out 0.4s forwards}
+.aethera-hero-cta{margin-top:3rem;background:#000;color:#fff;font-size:1rem;font-weight:500;padding:1.25rem 3.5rem;border-radius:9999px;border:none;cursor:pointer;transition:transform 0.2s;opacity:0;animation:fadeRise 0.8s ease-out 0.6s forwards}
+.aethera-hero-cta:hover{transform:scale(1.03)}
+.aethera-section{padding:8rem 2rem;max-width:1100px;margin:0 auto}
+.aethera-section h2{font-family:'Instrument Serif',serif;font-size:clamp(2.5rem,5vw,4rem);font-weight:400;line-height:1;letter-spacing:-0.03em;color:#000;margin-bottom:1.5rem}
+.aethera-section h2 em{font-style:italic;color:#6F6F6F}
+.aethera-section p{font-size:1.125rem;line-height:1.7;color:#6F6F6F;max-width:600px}
+.aethera-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;margin-top:3rem}
+.aethera-feature{padding:2rem;border:1px solid rgba(0,0,0,0.08);border-radius:16px;transition:transform 0.3s,box-shadow 0.3s}
+.aethera-feature:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.08)}
+.aethera-feature h3{font-family:'Instrument Serif',serif;font-size:1.5rem;font-weight:400;color:#000;margin-bottom:0.75rem}
+.aethera-feature p{font-size:0.9375rem;line-height:1.6;color:#6F6F6F}
+.aethera-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;padding:4rem 2rem;background:#000;color:#fff;text-align:center}
+@media(max-width:700px){.aethera-stats{grid-template-columns:repeat(2,1fr)}}
+.aethera-stat-num{font-family:'Instrument Serif',serif;font-size:clamp(2.5rem,5vw,4rem);font-weight:400;line-height:1}
+.aethera-stat-lbl{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.6);margin-top:0.5rem}
+.aethera-footer{background:#000;color:#fff;padding:4rem 2rem 2rem}
+.aethera-footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem}
+@media(max-width:768px){.aethera-footer-inner{grid-template-columns:1fr}}
+.aethera-footer h3{font-family:'Instrument Serif',serif;font-size:1.5rem;font-weight:400;margin-bottom:1rem}
+.aethera-footer a{display:block;color:rgba(255,255,255,0.6);font-size:0.875rem;margin-bottom:0.5rem;transition:color 0.2s;cursor:pointer}
+.aethera-footer a:hover{color:#fff}
+.aethera-footer-bottom{max-width:1100px;margin:3rem auto 0;padding-top:2rem;border-top:1px solid rgba(255,255,255,0.1);text-align:center;font-size:0.8125rem;color:rgba(255,255,255,0.4)}
+@keyframes fadeRise{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.8s ease-out,transform 0.8s ease-out}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;opacity:1!important;transform:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<nav class="aethera-nav">
+  <div class="aethera-logo">Aethera<sup>®</sup></div>
+  <div class="aethera-nav-links">
+    <button class="aethera-nav-link">Home</button>
+    <button class="aethera-nav-link">Studio</button>
+    <button class="aethera-nav-link">About</button>
+    <button class="aethera-nav-link">Journal</button>
+    <button class="aethera-nav-link">Reach Us</button>
+    <button class="aethera-nav-cta">Begin Journey</button>
+  </div>
+  <div class="aethera-nav-mobile"><span></span><span></span><span></span></div>
+</nav>
+<section class="aethera-hero">
+  <video class="aethera-hero-video" id="heroVideo" autoplay muted loop playsinline>
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4" type="video/mp4">
+  </video>
+  <div class="aethera-hero-overlay"></div>
+  <div class="aethera-hero-content">
+    <h1>Beyond <em>silence,</em> we build <em>the eternal.</em></h1>
+    <p class="aethera-hero-sub">Building platforms for brilliant minds, fearless makers, and thoughtful souls. Through the noise, we craft digital havens for deep work and pure flows.</p>
+    <button class="aethera-hero-cta">Begin Journey</button>
+  </div>
+</section>
+<section class="aethera-section reveal" id="studio">
+  <h2>The <em>Studio</em></h2>
+  <p>We are a collective of designers, engineers, and thinkers building digital products that feel inevitable. Our work spans brand systems, web platforms, and interactive experiences.</p>
+  <div class="aethera-features">
+    <div class="aethera-feature"><h3>Brand Systems</h3><p>Cohesive visual identities — from logo to type system to motion language — that communicate clearly across every touchpoint.</p></div>
+    <div class="aethera-feature"><h3>Web Platforms</h3><p>Production-grade web applications built with modern frameworks, optimized for speed, accessibility, and scale.</p></div>
+    <div class="aethera-feature"><h3>Interactive Experiences</h3><p>Immersive digital experiences that blend motion, sound, and interaction to create moments of genuine delight.</p></div>
+  </div>
+</section>
+<section class="aethera-stats reveal">
+  <div><div class="aethera-stat-num">12+</div><div class="aethera-stat-lbl">Years</div></div>
+  <div><div class="aethera-stat-num">80+</div><div class="aethera-stat-lbl">Projects</div></div>
+  <div><div class="aethera-stat-num">24</div><div class="aethera-stat-lbl">Awards</div></div>
+  <div><div class="aethera-stat-num">∞</div><div class="aethera-stat-lbl">Curiosity</div></div>
+</section>
+<section class="aethera-section reveal" id="about">
+  <h2>About <em>us</em></h2>
+  <p>We believe the best work happens in silence — away from noise, trends, and distraction. We build with intention, craft with patience, and ship with care. Every pixel, every line of code, every interaction is considered.</p>
+  <p style="margin-top:1rem">Our studio is remote-first, distributed across continents, united by a shared standard of excellence. We partner with teams who care about the details as much as we do.</p>
+</section>
+<footer class="aethera-footer">
+  <div class="aethera-footer-inner">
+    <div><h3>Aethera<sup style="font-size:0.5em">®</sup></h3><p style="color:rgba(255,255,255,0.6);font-size:0.875rem;line-height:1.6">Building platforms for brilliant minds, fearless makers, and thoughtful souls.</p></div>
+    <div><h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1rem;color:rgba(255,255,255,0.4)">Studio</h4><a>Work</a><a>About</a><a>Journal</a></div>
+    <div><h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1rem;color:rgba(255,255,255,0.4)">Connect</h4><a>Twitter</a><a>Instagram</a><a>Email</a></div>
+  </div>
+  <div class="aethera-footer-bottom">© 2026 Aethera®. Crafted in silence.</div>
+</footer>
+<script>
+var v=document.getElementById('heroVideo');if(v){v.addEventListener('loadeddata',function(){v.classList.add('loaded')});setTimeout(function(){v.classList.add('loaded')},2000)}
+if('IntersectionObserver'in window){var o=new IntersectionObserver(function(e){e.forEach(function(i){if(i.isIntersecting){i.target.classList.add('visible');o.unobserve(i.target)}})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(function(e){o.observe(e)})}else{document.querySelectorAll('.reveal').forEach(function(e){e.classList.add('visible')})}
+document.querySelectorAll('.aethera-nav-cta,.aethera-hero-cta').forEach(function(b){b.addEventListener('click',function(){var t=document.getElementById('studio');if(t)t.scrollIntoView({behavior:'smooth'})})});
+document.querySelector('.aethera-nav-mobile')?.addEventListener('click',function(){document.getElementById('studio')?.scrollIntoView({behavior:'smooth'})});
+</script>
+</body>
+</html>

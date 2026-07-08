@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "src/app/api/forge/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/forge/review/route.ts": {
+      "maxDuration": 45
+    },
+    "src/app/api/forge/extract/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/forge/learn-image/route.ts": {
+      "maxDuration": 90
+    },
+    "src/app/api/recreate/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/render-site/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}
