@@ -3187,6 +3187,100 @@ function CatalogTab() {
   );
 }function ArtistTab() {  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([    { role: 'assistant', content: "I'm ZenForge's Virtual Artist. I autonomously create premium websites 24/7. Type a request or click a quick prompt — I'll build it immediately." },  ]);  const [chatInput, setChatInput] = useState('');  const [isWorking, setIsWorking] = useState(false);  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);  const [currentSite, setCurrentSite] = useState<{ html: string; review: any; url: string; score: number; name: string } | null>(null);  const [approvedCount, setApprovedCount] = useState(0);  const [rejectedCount, setRejectedCount] = useState(0);  const [genCount, setGenCount] = useState(0);  const [chatCollapsed, setChatCollapsed] = useState(false);  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');  const [reviewEmojis, setReviewEmojis] = useState<Record<string, number>>({});  const [history, setHistory] = useState<{ name: string; score: number; url: string; html: string; review: any }[]>([]);  const llmModel = typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest';  const generate = useCallback(async (prompt: string, name?: string) => {    setIsWorking(true);    setThinkingSteps([]);    setCurrentSite(null);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'generate', prompt, businessName: name || 'ZenForge Site', model: llmModel }),      });      if (!res.ok || !res.body) throw new Error('Generation failed');      const reader = res.body.getReader();      const decoder = new TextDecoder();      let buffer = '';      while (true) {        const { done, value } = await reader.read();        if (done) break;        buffer += decoder.decode(value, { stream: true });        const lines = buffer.split('\n');        buffer = lines.pop() || '';        for (const line of lines) {          if (!line.trim()) continue;          try {            const data = JSON.parse(line);            if (data.step === 'thinking') {              setThinkingSteps(prev => [...prev, data.message]);            } else if (data.step === 'done') {              setCurrentSite({ html: data.html, review: data.review, url: data.viewUrl, score: data.score, name: data.businessName });              setGenCount(prev => prev + 1);              setHistory(prev => [...prev, { name: data.businessName, score: data.score, url: data.viewUrl, html: data.html, review: data.review }]);              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generated "' + data.businessName + '" — AI Score: ' + data.score + '/30. Review it below!' }]);            } else if (data.step === 'error') {              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + data.message }]);            }          } catch {}        }      }    } catch (e) {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generation error: ' + (e instanceof Error ? e.message : 'unknown') }]);    } finally {      setIsWorking(false);    }  }, [llmModel]);  const sendChat = useCallback(async () => {    if (!chatInput.trim() || isWorking) return;    const msg = chatInput.trim();    setChatInput('');    setChatMessages(prev => [...prev, { role: 'user', content: msg }]);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'chat', message: msg, model: llmModel }),      });      const data = await res.json();      if (data.action === 'auto-generate') {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);        generate(data.prompt, data.businessName);      } else if (data.response) {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);      }    } catch {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);    }  }, [chatInput, isWorking, llmModel, generate]);  const rateSite = useCallback((emoji: string, value: number, action: string) => {    if (!currentSite) return;    setReviewEmojis(prev => ({ ...prev, [currentSite.url]: value }));    if (action === 'approve') {      setApprovedCount(prev => {        const n = prev + 1;        setChatMessages(p => [...p, { role: 'assistant', content: n >= 3 ? '3 approved! Sent to Evolution.' : 'Approved! ' + (3 - n) + ' more to evolve.' }]);        return n;      });    } else if (action === 'reject') {      setRejectedCount(prev => prev + 1);      setChatMessages(p => [...p, { role: 'assistant', content: 'Trashed. I will do better next time.' }]);    } else {      setChatMessages(p => [...p, { role: 'assistant', content: 'Got it. Tell me what to improve.' }]);    }  }, [currentSite]);  const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';  return (    <div className="flex flex-col gap-3">      {/* Compact stats bar */}      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>        <div className="flex items-center gap-3 text-[11px]">          <span style={{ color: C.success }}>{approvedCount} approved</span>          <span style={{ color: C.error }}>{rejectedCount} trashed</span>          <span style={{ color: C.textMute }}>{genCount} generated</span>        </div>        <div className="flex items-center gap-2">          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: isWorking ? C.warn : C.success }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />          <span className="text-[10px] font-mono uppercase" style={{ color: isWorking ? C.warn : C.success }}>{isWorking ? 'Working' : '24/7 Ready'}</span>          <button onClick={() => setChatCollapsed(!chatCollapsed)} className="rounded-md px-2 py-1 text-[10px]" style={{ background: C.surface, color: C.textMute }}>            {chatCollapsed ? 'Show Chat' : 'Hide Chat'}          </button>        </div>      </div>      <div className={'grid gap-3 ' + (chatCollapsed ? 'grid-cols-1' : 'lg:grid-cols-[1fr_340px] max-lg:grid-cols-1')}>        {/* LEFT — Preview */}        <div className="flex flex-col gap-3 min-w-0">          {/* Thinking steps */}          {isWorking && thinkingSteps.length > 0 && (            <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>              <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>VA Thinking</div>              <div className="space-y-1">                {thinkingSteps.map((step, i) => (                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px]" style={{ color: C.textSec }}>                    <CheckCircle2 size={11} style={{ color: C.success }} />                    {step}                  </motion.div>                ))}                <motion.div className="flex items-center gap-2 text-[11px]" style={{ color: C.textMute }}>                  <motion.div className="h-2 w-2 rounded-full border" style={{ borderColor: '#DCFF00', borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />                  Working...                </motion.div>              </div>            </div>          )}          {/* Preview */}          <div className="rounded-lg p-3 flex-1" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>{currentSite ? currentSite.name : 'Preview'}</span>              <div className="flex items-center gap-1">                {(['desktop', 'tablet', 'mobile'] as const).map(d => (                  <button key={d} onClick={() => setDevice(d)} className="rounded p-1" style={{ background: device === d ? C.hover : 'transparent' }}>                    {d === 'desktop' ? <Monitor size={12} style={{ color: device === d ? C.text : C.textMute }} /> : d === 'tablet' ? <Tablet size={12} style={{ color: device === d ? C.text : C.textMute }} /> : <Smartphone size={12} style={{ color: device === d ? C.text : C.textMute }} />}                  </button>                ))}              </div>            </div>            {isWorking && (              <div className="flex flex-col items-center justify-center py-20">                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid ' + C.borderDef, borderTopColor: '#DCFF00' }} />                <div className="mt-3 text-[12px]" style={{ color: C.textMute }}>Generating with {llmModel}...</div>              </div>            )}            {!isWorking && currentSite && (              <>                <div className="rounded-md overflow-hidden" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }}>                  <iframe key={currentSite.url + device} srcDoc={currentSite.html} title="preview" sandbox="allow-scripts allow-same-origin allow-popups" style={{ width: deviceWidth, maxWidth: '100%', height: '550px', border: 'none', margin: '0 auto', display: 'block' }} />                </div>                {/* Score + emoji review */}                <div className="mt-2 flex items-center justify-between">                  <div className="flex items-center gap-2">                    <span className="text-[14px] font-bold" style={{ color: currentSite.score >= 22 ? C.success : C.warn }}>{currentSite.score}/30</span>                    <span className="text-[11px]" style={{ color: C.textMute }}>{currentSite.review?.verdict || ''}</span>                  </div>                  <div className="flex gap-1.5">                    {[                      { e: '\u{1F929}', l: 'Love', v: 5, a: 'approve' },                      { e: '\u{1F60D}', l: 'Great', v: 4, a: 'approve' },                      { e: '\u{1F610}', l: 'Okay', v: 3, a: 'neutral' },                      { e: '\u{1F615}', l: 'Work', v: 2, a: 'iterate' },                      { e: '\u{1F621}', l: 'Trash', v: 1, a: 'reject' },                    ].map(r => (                      <button key={r.e} onClick={() => rateSite(r.e, r.v, r.a)} className="flex flex-col items-center rounded-md p-1.5" style={{ background: reviewEmojis[currentSite.url] === r.v ? 'rgba(220,255,0,0.1)' : C.card, border: '1px solid ' + C.borderDef }}>                        <span className="text-[18px]">{r.e}</span>                      </button>                    ))}                  </div>                </div>                <div className="mt-2 flex gap-2">                  <a href={currentSite.url} target="_blank" rel="noopener" className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Open full</a>                  <button onClick={() => { if (currentSite) generate('mutate ' + currentSite.name, currentSite.name); }} className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Mutate</button>                </div>              </>            )}            {!isWorking && !currentSite && (              <div className="flex flex-col items-center justify-center py-20">                <Wand2 size={28} strokeWidth={1} style={{ color: C.textMute }} />                <div className="mt-2 text-[12px]" style={{ color: C.textMute }}>Click a quick prompt to generate</div>              </div>            )}          </div>          {/* History */}          {history.length > 0 && (            <div className="flex gap-2 overflow-x-auto pb-1">              {history.map((h, i) => (                <button key={i} onClick={() => setCurrentSite({ html: h.html, review: h.review, url: h.url, score: h.score, name: h.name })} className="flex-shrink-0 rounded-md p-2" style={{ background: currentSite?.url === h.url ? C.hover : C.card, border: '1px solid ' + C.borderDef, minWidth: 100 }}>                  <div className="text-[10px] font-medium truncate" style={{ color: C.text }}>{h.name}</div>                  <div className="text-[9px]" style={{ color: h.score >= 22 ? C.success : C.warn }}>{h.score}/30</div>                </button>              ))}            </div>          )}        </div>        {/* RIGHT — Chat (collapsible) */}        {!chatCollapsed && (          <div className="flex flex-col rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef, height: 'fit-content', maxHeight: '70vh' }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>VA Chat</span>              <button onClick={() => setChatCollapsed(true)} className="text-[10px]" style={{ color: C.textMute }}>Hide</button>            </div>            <div className="flex-1 overflow-y-auto space-y-1.5 mb-2" style={{ minHeight: '200px' }}>              {chatMessages.map((msg, i) => (                <div key={i} className={'rounded-md p-2 text-[11px] ' + (msg.role === 'user' ? 'ml-6' : 'mr-6')} style={{ background: msg.role === 'user' ? 'rgba(220,255,0,0.05)' : C.card, border: '1px solid ' + C.borderDef }}>                  <div className="text-[8px] font-bold uppercase mb-0.5" style={{ color: msg.role === 'user' ? C.textMute : '#DCFF00' }}>{msg.role === 'user' ? 'You' : 'VA'}</div>                  <div style={{ color: C.textSec, lineHeight: 1.4 }}>{msg.content}</div>                </div>              ))}              {isWorking && (                <div className="flex gap-1 ml-6">                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} className="h-1.5 w-1.5 rounded-full" style={{ background: C.textMute }} />)}                </div>              )}            </div>            {/* Quick prompts */}            <div className="flex flex-wrap gap-1 mb-2">              {['Luxury fashion', 'SaaS platform', 'Fitness app', 'Portfolio'].map(q => (                <button key={q} onClick={() => { setChatMessages(p => [...p, { role: 'user', content: 'Build a ' + q }]); generate('Build a ' + q, q.split(' ')[0]); }} className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}>{q}</button>              ))}            </div>            <div className="flex gap-1">              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message VA..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} />              <button onClick={sendChat} disabled={isWorking || !chatInput.trim()} className="rounded-md px-2.5 py-1.5 text-[11px]" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Send</button>            </div>          </div>        )}      </div>    </div>  );}
 /* ========== Settings Tab ========== */
+function VAMemoryPanel() {
+  const [memory, setMemory] = useState<string>('');
+  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [autoGen, setAutoGen] = useState(false);
+
+  const fetchMemory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/va-autonomous', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status' }),
+      });
+      const data = await res.json();
+      setMemory(data.memory || 'No memory yet.');
+      setSummary(data.summary || null);
+    } catch {}
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchMemory(); }, [fetchMemory]);
+
+  const runAutonomous = useCallback(async () => {
+    setAutoGen(true);
+    try {
+      const res = await fetch('/api/va-autonomous', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', model: localStorage.getItem('sf-llm-model') || 'mistral-large-latest' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.viewUrl) {
+          window.open(data.viewUrl.replace('zenforge.site', 'www.zenforge.site'), '_blank');
+        }
+      }
+      fetchMemory();
+    } catch {}
+    setAutoGen(false);
+  }, [fetchMemory]);
+
+  return (
+    <div className="space-y-3">
+      <SectionHeader title="VA Memory" sub="Virtual Artist's autonomous work log" right={
+        <Button size="sm" variant="primary" icon={autoGen ? Loader2 : Sparkles} onClick={runAutonomous} disabled={autoGen}>
+          {autoGen ? 'Generating...' : 'Run Autonomous'}
+        </Button>
+      } />
+
+      {/* Stats */}
+      {summary && (
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="Total Entries" value={summary.totalEntries || 0} icon={Brain} />
+          <StatCard label="Last Activity" value={(summary.lastActivity || 'Never').slice(0, 19)} icon={Activity} />
+          <StatCard label="Avg Score" value={summary.recentScores?.length ? Math.round(summary.recentScores.reduce((a: number, b: number) => a + b, 0) / summary.recentScores.length) + '/30' : 'N/A'} icon={TrendingUp} accent />
+        </div>
+      )}
+
+      {/* Memory content */}
+      <div className="rounded-lg p-3 max-h-[500px] overflow-y-auto" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: C.textMute }}>memory.md</span>
+          <Button size="sm" variant="ghost" icon={RefreshCw} onClick={fetchMemory}>Refresh</Button>
+        </div>
+        {loading ? (
+          <div className="py-6 text-center text-[12px]" style={{ color: C.textMute }}>Loading memory...</div>
+        ) : (
+          <pre className="text-[11px] whitespace-pre-wrap font-mono" style={{ color: C.textSec, lineHeight: 1.6 }}>{memory}</pre>
+        )}
+      </div>
+
+      {/* Recent scores chart */}
+      {summary?.recentScores?.length > 0 && (
+        <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+          <div className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: C.textMute }}>Recent Review Scores</div>
+          <div className="flex items-end gap-1.5 h-20">
+            {summary.recentScores.map((score: number, i: number) => (
+              <div key={i} className="flex-1 rounded-t" style={{
+                height: `${(score / 30) * 100}%`,
+                background: score >= 22 ? 'linear-gradient(180deg, #22c55e, #16a34a)' : 'linear-gradient(180deg, #f59e0b, #d97706)',
+                minHeight: '4px',
+              }} title={`${score}/30`} />
+            ))}
+          </div>
+          <div className="flex justify-between mt-1 text-[9px]" style={{ color: C.textMute }}>
+            <span>0/30</span>
+            <span>22/30 (pass)</span>
+            <span>30/30</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPassword, paywallAdminError, currentRotatingPassword, unlockPaywallAdmin, setPaywallAdminPassword, setPaywallAdminUnlocked, togglePaywallFromAdmin }: {
   paywallEnabled: boolean;
   paywallAdminUnlocked: boolean;
@@ -3198,7 +3292,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
   setPaywallAdminUnlocked: (v: boolean) => void;
   togglePaywallFromAdmin: () => void;
 }) {
-  const [section, setSection] = useState<'general' | 'appearance' | 'llm' | 'paywall' | 'integrations' | 'advanced'>('general');
+  const [section, setSection] = useState<'general' | 'appearance' | 'llm' | 'paywall' | 'integrations' | 'va-memory' | 'advanced'>('general');
   const [accentColor, setAccentColor] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('elite-accent') || '#ffffff' : '#ffffff');
   const [customAccent, setCustomAccent] = useState('#a855f7');
   const [llmModel, setLlmModel] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'glm-4-plus');
@@ -3244,7 +3338,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
   return (
     <div className="grid gap-3 lg:grid-cols-[200px_1fr]">
       <Panel className="p-1.5">
-        {[{ id: 'general', label: 'General', icon: Settings }, { id: 'appearance', label: 'Appearance', icon: Sparkles }, { id: 'llm', label: 'LLM & API Keys', icon: Cpu }, { id: 'paywall', label: 'Paywall', icon: Lock }, { id: 'integrations', label: 'Integrations', icon: Boxes }, { id: 'advanced', label: 'Advanced', icon: Server }].map((s) => {
+        {[{ id: 'general', label: 'General', icon: Settings }, { id: 'appearance', label: 'Appearance', icon: Sparkles }, { id: 'llm', label: 'LLM & API Keys', icon: Cpu }, { id: 'paywall', label: 'Paywall', icon: Lock }, { id: 'integrations', label: 'Integrations', icon: Boxes }, { id: 'va-memory', label: 'VA Memory', icon: Brain }, { id: 'advanced', label: 'Advanced', icon: Server }].map((s) => {
           const active = section === s.id; const Icon = s.icon;
           return <button key={s.id} onClick={() => setSection(s.id as any)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]" style={{ background: active ? C.hover : 'transparent', color: active ? C.text : C.textMute, transition: '100ms' }}><Icon size={13} strokeWidth={1.5} />{s.label}</button>;
         })}
@@ -3484,6 +3578,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
           </div>
         )}
         {section === 'integrations' && <div className="space-y-2"><SectionHeader title="Integrations" sub="Connect external services" />{[{ name: 'Z.AI SDK Proxy', key: 'VPS Bridge · glm-4-plus', connected: true }, { name: 'Supabase', key: 'Supabase Project', connected: true }, { name: 'Vercel', key: 'zenforge.site', connected: true }, { name: 'Groq', key: groqKey ? groqKey.slice(0, 12) + '...' : 'Add key in LLM tab', connected: !!groqKey }, { name: 'Modal', key: 'Add MODAL_TOKEN', connected: false }, { name: 'E2B Sandbox', key: 'Add E2B_API_KEY', connected: false }].map((env) => <div key={env.name} className="flex items-center justify-between rounded-md p-2.5" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div><div className="text-[12px] font-medium" style={{ color: C.text }}>{env.name}</div><div className="font-mono text-[10px]" style={{ color: C.textMute }}>{env.key}</div></div><Badge color={env.connected ? 'success' : 'warn'}>{env.connected ? 'Connected' : 'Not set'}</Badge></div>)}</div>}
+        {section === 'va-memory' && <VAMemoryPanel />}
         {section === 'advanced' && <div className="space-y-3"><SectionHeader title="Advanced" sub="System information & maintenance" /><div className="grid grid-cols-2 gap-2"><StatCard label="Renderer" value="V6 Ultra" icon={Cpu} /><StatCard label="Brain files" value="310" icon={Brain} /><StatCard label="Pattern combos" value="207T" icon={Layers} accent /><StatCard label="API routes" value="29" icon={Server} /></div><div className="rounded-md p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div className="text-[13px] font-medium" style={{ color: C.error }}>Danger zone</div><p className="mt-1 text-[11px]" style={{ color: C.textMute }}>Clear all locally-cached data and reset studio state.</p><div className="mt-2.5 flex gap-1.5"><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear localStorage?')) localStorage.clear(); }}>Clear cache</Button><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear all logs?')) fetch('/api/logs', { method: 'DELETE' }); }}>Clear logs</Button></div></div></div>}
       </Panel>
     </div>
