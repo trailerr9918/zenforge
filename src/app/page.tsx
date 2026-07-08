@@ -3005,133 +3005,145 @@ RULES: ONLY include sections the prompt ACTUALLY describes. Hero = 1 section. La
 function CatalogTab() {
   const [catalog, setCatalog] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeType, setActiveType] = useState<string>('videos');
-  const [selectedItems, setSelectedItems] = useState<Record<string, any>>({});
+  const [activeFolder, setActiveFolder] = useState<string>('videos');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPicks, setSelectedPicks] = useState<Record<string, any>>({});
   const [generating, setGenerating] = useState(false);
+  const [genResult, setGenResult] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/catalog').then(r => r.json()).then(d => { setCatalog(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  const types = [
-    { id: 'videos', label: 'Videos', icon: 'video', count: catalog?.videos?.length || 0 },
-    { id: 'typographies', label: 'Typography', icon: 'font', count: catalog?.typographies?.length || 0 },
-    { id: 'colors', label: 'Colors', icon: 'palette', count: catalog?.colors?.length || 0 },
-    { id: 'headers', label: 'Headers', icon: 'nav', count: catalog?.headers?.length || 0 },
-    { id: 'footers', label: 'Footers', icon: 'footer', count: catalog?.footers?.length || 0 },
-    { id: 'buttons', label: 'Buttons', icon: 'button', count: catalog?.buttons?.length || 0 },
+  const folders = [
+    { id: 'videos', label: 'Videos', icon: 'V', color: '#FF6B6B', count: catalog?.videos?.length || 0 },
+    { id: 'typographies', label: 'Typography', icon: 'T', color: '#4ECDC4', count: catalog?.typographies?.length || 0 },
+    { id: 'colors', label: 'Colors', icon: 'C', color: '#FFE66D', count: catalog?.colors?.length || 0 },
+    { id: 'headers', label: 'Headers', icon: 'H', color: '#A8E6CF', count: catalog?.headers?.length || 0 },
+    { id: 'footers', label: 'Footers', icon: 'F', color: '#FF8B94', count: catalog?.footers?.length || 0 },
+    { id: 'buttons', label: 'Buttons', icon: 'B', color: '#C9A0DC', count: catalog?.buttons?.length || 0 },
   ];
 
-  const items = catalog ? (catalog[activeType] || []) : [];
+  const items = catalog ? (catalog[activeFolder] || []) : [];
+  const filtered = searchQuery ? items.filter((item: any) => {
+    const str = JSON.stringify(item).toLowerCase();
+    return str.includes(searchQuery.toLowerCase());
+  }) : items;
 
-  const randomize16 = () => {
+  const randomize = () => {
     if (!catalog) return;
-    const picked: Record<string, any> = {};
-    // Pick 1 from each category
-    ['videos', 'typographies', 'colors', 'headers', 'footers', 'buttons'].forEach(type => {
-      const arr = catalog[type] || [];
-      if (arr.length > 0) picked[type] = arr[Math.floor(Math.random() * arr.length)];
+    const picks: Record<string, any> = {};
+    folders.forEach(f => {
+      const arr = catalog[f.id] || [];
+      if (arr.length > 0) picks[f.id] = arr[Math.floor(Math.random() * arr.length)];
     });
-    setSelectedItems(picked);
+    setSelectedPicks(picks);
   };
 
   const generateFromPicks = async () => {
     setGenerating(true);
-    const picks = Object.values(selectedItems);
-    const prompt = 'Create a premium website using these elements: ' + picks.map((p: any) => JSON.stringify(p)).join(', ');
+    setGenResult(null);
     try {
-      const res = await fetch('/api/premium-generate', {
+      const picks = Object.values(selectedPicks);
+      const prompt = 'Create a premium website using these design elements from our catalog: ' + picks.map((p: any) => JSON.stringify(p)).join(', ') + '. Include all 16 premium features.';
+      const res = await fetch('/api/va-generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, provider: 'mistral', model: 'mistral-large-latest' }),
+        body: JSON.stringify({ action: 'generate', prompt, businessName: 'Catalog Merge', model: 'mistral-large-latest' }),
       });
       if (res.ok && res.body) {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let html = '';
+        let buffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          html += decoder.decode(value, { stream: true });
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const data = JSON.parse(line);
+              if (data.step === 'done') {
+                setGenResult({ url: data.viewUrl || '', name: data.businessName || 'Catalog Merge' });
+              }
+            } catch {}
+          }
         }
-        const marker = '|||GENERATION_COMPLETE|||';
-        if (html.includes(marker)) html = html.split(marker)[0];
-        html = html.replace(/^```(?:html)?\s*/i, '').replace(/\s*```\s*$/i, '');
-        const docIdx = html.indexOf('<!DOCTYPE');
-        if (docIdx > 0) html = html.slice(docIdx);
-
-        const saveRes = await fetch('/api/save-website', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html, businessName: 'Catalog Merge' }),
-        });
-        const saveData = await saveRes.json();
-        window.open('https://www.zenforge.site/s/' + saveData.slug, '_blank');
       }
     } catch (e) { console.error(e); }
     setGenerating(false);
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[200px_1fr_300px] max-lg:grid-cols-1">
-      {/* Left — categories */}
-      <div className="rounded-lg p-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
-        <div className="text-[10px] uppercase tracking-wider mb-2 px-2" style={{ color: C.textMute }}>Categories</div>
-        {types.map(t => (
-          <button key={t.id} onClick={() => setActiveType(t.id)} className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[12px]" style={{ background: activeType === t.id ? C.hover : 'transparent', color: activeType === t.id ? C.text : C.textMute }}>
-            <span>{t.label}</span>
-            <span className="font-mono text-[10px]">{t.count}</span>
+    <div className="grid gap-3 lg:grid-cols-[180px_1fr_280px] max-lg:grid-cols-1">
+      {/* Left — Folder sidebar */}
+      <div className="flex flex-col gap-1.5">
+        <div className="text-[10px] uppercase tracking-wider px-1 mb-1" style={{ color: C.textMute }}>Folders</div>
+        {folders.map(f => (
+          <button key={f.id} onClick={() => { setActiveFolder(f.id); setSearchQuery(''); }}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-colors"
+            style={{ background: activeFolder === f.id ? C.hover : C.card, border: '1px solid ' + (activeFolder === f.id ? C.borderFoc : C.borderDef), color: activeFolder === f.id ? C.text : C.textMute }}>
+            <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold" style={{ background: f.color + '20', color: f.color }}>{f.icon}</div>
+            <span className="flex-1 text-left">{f.label}</span>
+            <span className="font-mono text-[10px]" style={{ color: C.textMute }}>{f.count}</span>
           </button>
         ))}
       </div>
 
-      {/* Center — items */}
+      {/* Center — Items grid */}
       <div className="rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[13px] font-medium" style={{ color: C.text }}>{types.find(t => t.id === activeType)?.label || 'Items'}</span>
-          <span className="text-[10px]" style={{ color: C.textMute }}>{items.length} items</span>
+          <span className="text-[13px] font-medium" style={{ color: C.text }}>{folders.find(f => f.id === activeFolder)?.label}</span>
+          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." className="rounded-md px-2.5 py-1 text-[11px] outline-none w-40" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} />
         </div>
-        {loading ? (
-          <div className="py-10 text-center text-[12px]" style={{ color: C.textMute }}>Loading catalog...</div>
-        ) : (
-          <div className="space-y-1 max-h-[500px] overflow-y-auto">
-            {items.map((item: any, i: number) => (
-              <div key={i} className="rounded-md p-2 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
-                {activeType === 'videos' && (
+        {loading ? <div className="py-10 text-center text-[12px]" style={{ color: C.textMute }}>Loading catalog...</div> : (
+          <div className="grid grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+            {filtered.map((item: any, i: number) => (
+              <div key={i} className="rounded-md p-2.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+                {activeFolder === 'videos' && (
                   <div>
-                    <div className="font-medium" style={{ color: C.text }}>{item.name || 'Untitled'}</div>
-                    <div className="font-mono text-[9px] truncate" style={{ color: C.textMute }}>{item.url}</div>
-                    <div className="text-[9px]" style={{ color: C.textMute }}>Type: {item.type} | From: {item.sourcePrompt}</div>
+                    <div className="font-medium truncate" style={{ color: C.text }}>{item.name || 'Untitled'}</div>
+                    <div className="font-mono text-[9px] truncate mt-0.5" style={{ color: C.textMute }}>{item.url?.slice(0, 50)}...</div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="rounded px-1.5 py-0.5 text-[8px]" style={{ background: C.surface, color: C.textMute }}>{item.type}</span>
+                      <span className="text-[9px]" style={{ color: C.textMute }}>from {item.sourcePrompt}</span>
+                    </div>
                   </div>
                 )}
-                {activeType === 'typographies' && (
+                {activeFolder === 'typographies' && (
                   <div>
-                    <span style={{ color: C.text }}>{item.display}</span> + <span style={{ color: C.textSec }}>{item.body}</span>
-                    {item.accent && <span style={{ color: '#DCFF00' }}> + {item.accent}</span>}
+                    <div style={{ color: C.text }}>{item.display}</div>
+                    <div className="text-[10px]" style={{ color: C.textMute }}>{item.body}</div>
+                    {item.accent && <div className="text-[10px]" style={{ color: '#DCFF00' }}>+ {item.accent}</div>}
                   </div>
                 )}
-                {activeType === 'colors' && (
+                {activeFolder === 'colors' && (
                   <div className="flex items-center gap-2">
-                    <span className="h-4 w-4 rounded" style={{ background: item.bg, border: '1px solid ' + C.borderDef }} />
-                    <span className="h-4 w-4 rounded" style={{ background: item.text, border: '1px solid ' + C.borderDef }} />
-                    <span className="h-4 w-4 rounded" style={{ background: item.accent, border: '1px solid ' + C.borderDef }} />
-                    <span className="font-mono text-[10px]" style={{ color: C.textMute }}>{item.bg} / {item.accent}</span>
+                    <div className="flex gap-1">
+                      <span className="h-5 w-5 rounded" style={{ background: item.bg, border: '1px solid ' + C.borderDef }} />
+                      <span className="h-5 w-5 rounded" style={{ background: item.text, border: '1px solid ' + C.borderDef }} />
+                      <span className="h-5 w-5 rounded" style={{ background: item.accent, border: '1px solid ' + C.borderDef }} />
+                    </div>
+                    <span className="font-mono text-[9px]" style={{ color: C.textMute }}>{item.accent}</span>
                   </div>
                 )}
-                {activeType === 'headers' && (
+                {activeFolder === 'headers' && (
                   <div>
-                    <div style={{ color: C.text }}>{item.logo}</div>
-                    <div className="text-[9px]" style={{ color: C.textMute }}>{item.navItems?.join(' / ')}</div>
+                    <div className="font-medium" style={{ color: C.text }}>{item.logo}</div>
+                    <div className="text-[9px] truncate" style={{ color: C.textMute }}>{item.navItems?.join(' / ')}</div>
                   </div>
                 )}
-                {activeType === 'footers' && (
+                {activeFolder === 'footers' && (
                   <div>
-                    <span style={{ color: C.text }}>{item.style}</span>
-                    <span className="ml-2 text-[9px]" style={{ color: C.textMute }}>{item.columns} cols | Newsletter: {item.hasNewsletter ? 'Y' : 'N'} | Social: {item.hasSocial ? 'Y' : 'N'}</span>
+                    <div style={{ color: C.text }}>{item.style}</div>
+                    <div className="text-[9px]" style={{ color: C.textMute }}>{item.columns} cols | {item.hasNewsletter ? 'Newsletter' : 'No newsletter'} | {item.hasSocial ? 'Social' : 'No social'}</div>
                   </div>
                 )}
-                {activeType === 'buttons' && (
+                {activeFolder === 'buttons' && (
                   <div>
-                    <span style={{ color: C.text }}>{item.text}</span>
-                    <span className="ml-2 text-[9px]" style={{ color: C.textMute }}>{item.type} | {item.style}</span>
+                    <div style={{ color: C.text }}>{item.text}</div>
+                    <div className="text-[9px]" style={{ color: C.textMute }}>{item.type} | {item.style}</div>
                   </div>
                 )}
               </div>
@@ -3140,33 +3152,40 @@ function CatalogTab() {
         )}
       </div>
 
-      {/* Right — randomizer */}
+      {/* Right — Randomizer + Generate */}
       <div className="rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>
-        <div className="text-[13px] font-medium mb-2" style={{ color: C.text }}>Randomize 16</div>
-        <div className="text-[11px] mb-3" style={{ color: C.textMute }}>Pick elements from different prompts to create a unique website.</div>
-        <button onClick={randomize16} className="w-full rounded-md py-2 text-[12px] font-medium mb-3" style={{ background: '#DCFF00', color: '#0A0A0A' }}>
-          Randomize Picks
-        </button>
-        {Object.keys(selectedItems).length > 0 && (
+        <div className="text-[13px] font-medium mb-1" style={{ color: C.text }}>Randomize 16</div>
+        <div className="text-[10px] mb-3" style={{ color: C.textMute }}>Pick elements from different prompts to create a unique website.</div>
+        <button onClick={randomize} className="w-full rounded-md py-2 text-[12px] font-medium mb-3" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Pick Random Elements</button>
+
+        {Object.keys(selectedPicks).length > 0 && (
           <div className="space-y-1.5 mb-3">
-            {Object.entries(selectedItems).map(([type, item]: [string, any]) => (
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: C.textMute }}>Selected ({Object.keys(selectedPicks).length})</div>
+            {Object.entries(selectedPicks).map(([type, item]: [string, any]) => (
               <div key={type} className="rounded-md p-1.5 text-[10px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
-                <span className="font-medium" style={{ color: C.textMute }}>{type}:</span>{' '}
-                <span style={{ color: C.textSec }}>{item.name || item.display || item.bg || item.logo || item.text || 'picked'}</span>
+                <span style={{ color: C.textMute }}>{type}:</span>{' '}
+                <span style={{ color: C.textSec }}>{(item.name || item.display || item.bg || item.logo || item.text || 'picked').toString().slice(0, 40)}</span>
               </div>
             ))}
           </div>
         )}
-        <button onClick={generateFromPicks} disabled={generating || Object.keys(selectedItems).length === 0} className="w-full rounded-md py-2 text-[12px] font-medium" style={{ background: C.text, color: C.bg, opacity: generating ? 0.5 : 1 }}>
+
+        <button onClick={generateFromPicks} disabled={generating || Object.keys(selectedPicks).length === 0}
+          className="w-full rounded-md py-2 text-[12px] font-medium mb-2"
+          style={{ background: C.text, color: C.bg, opacity: (generating || Object.keys(selectedPicks).length === 0) ? 0.4 : 1 }}>
           {generating ? 'Generating...' : 'Generate Website'}
         </button>
+
+        {genResult && (
+          <div className="rounded-md p-2 text-[11px]" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <div style={{ color: C.success }}>Generated!</div>
+            <a href={genResult.url.replace('zenforge.site', 'www.zenforge.site')} target="_blank" rel="noopener" className="underline" style={{ color: C.textSec }}>Open website</a>
+          </div>
+        )}
       </div>
     </div>
   );
-}
-
-
-function ArtistTab() {  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([    { role: 'assistant', content: "I'm ZenForge's Virtual Artist. I autonomously create premium websites 24/7. Type a request or click a quick prompt — I'll build it immediately." },  ]);  const [chatInput, setChatInput] = useState('');  const [isWorking, setIsWorking] = useState(false);  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);  const [currentSite, setCurrentSite] = useState<{ html: string; review: any; url: string; score: number; name: string } | null>(null);  const [approvedCount, setApprovedCount] = useState(0);  const [rejectedCount, setRejectedCount] = useState(0);  const [genCount, setGenCount] = useState(0);  const [chatCollapsed, setChatCollapsed] = useState(false);  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');  const [reviewEmojis, setReviewEmojis] = useState<Record<string, number>>({});  const [history, setHistory] = useState<{ name: string; score: number; url: string; html: string; review: any }[]>([]);  const llmModel = typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest';  const generate = useCallback(async (prompt: string, name?: string) => {    setIsWorking(true);    setThinkingSteps([]);    setCurrentSite(null);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'generate', prompt, businessName: name || 'ZenForge Site', model: llmModel }),      });      if (!res.ok || !res.body) throw new Error('Generation failed');      const reader = res.body.getReader();      const decoder = new TextDecoder();      let buffer = '';      while (true) {        const { done, value } = await reader.read();        if (done) break;        buffer += decoder.decode(value, { stream: true });        const lines = buffer.split('\n');        buffer = lines.pop() || '';        for (const line of lines) {          if (!line.trim()) continue;          try {            const data = JSON.parse(line);            if (data.step === 'thinking') {              setThinkingSteps(prev => [...prev, data.message]);            } else if (data.step === 'done') {              setCurrentSite({ html: data.html, review: data.review, url: data.viewUrl, score: data.score, name: data.businessName });              setGenCount(prev => prev + 1);              setHistory(prev => [...prev, { name: data.businessName, score: data.score, url: data.viewUrl, html: data.html, review: data.review }]);              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generated "' + data.businessName + '" — AI Score: ' + data.score + '/30. Review it below!' }]);            } else if (data.step === 'error') {              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + data.message }]);            }          } catch {}        }      }    } catch (e) {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generation error: ' + (e instanceof Error ? e.message : 'unknown') }]);    } finally {      setIsWorking(false);    }  }, [llmModel]);  const sendChat = useCallback(async () => {    if (!chatInput.trim() || isWorking) return;    const msg = chatInput.trim();    setChatInput('');    setChatMessages(prev => [...prev, { role: 'user', content: msg }]);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'chat', message: msg, model: llmModel }),      });      const data = await res.json();      if (data.action === 'auto-generate') {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);        generate(data.prompt, data.businessName);      } else if (data.response) {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);      }    } catch {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);    }  }, [chatInput, isWorking, llmModel, generate]);  const rateSite = useCallback((emoji: string, value: number, action: string) => {    if (!currentSite) return;    setReviewEmojis(prev => ({ ...prev, [currentSite.url]: value }));    if (action === 'approve') {      setApprovedCount(prev => {        const n = prev + 1;        setChatMessages(p => [...p, { role: 'assistant', content: n >= 3 ? '3 approved! Sent to Evolution.' : 'Approved! ' + (3 - n) + ' more to evolve.' }]);        return n;      });    } else if (action === 'reject') {      setRejectedCount(prev => prev + 1);      setChatMessages(p => [...p, { role: 'assistant', content: 'Trashed. I will do better next time.' }]);    } else {      setChatMessages(p => [...p, { role: 'assistant', content: 'Got it. Tell me what to improve.' }]);    }  }, [currentSite]);  const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';  return (    <div className="flex flex-col gap-3">      {/* Compact stats bar */}      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>        <div className="flex items-center gap-3 text-[11px]">          <span style={{ color: C.success }}>{approvedCount} approved</span>          <span style={{ color: C.error }}>{rejectedCount} trashed</span>          <span style={{ color: C.textMute }}>{genCount} generated</span>        </div>        <div className="flex items-center gap-2">          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: isWorking ? C.warn : C.success }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />          <span className="text-[10px] font-mono uppercase" style={{ color: isWorking ? C.warn : C.success }}>{isWorking ? 'Working' : '24/7 Ready'}</span>          <button onClick={() => setChatCollapsed(!chatCollapsed)} className="rounded-md px-2 py-1 text-[10px]" style={{ background: C.surface, color: C.textMute }}>            {chatCollapsed ? 'Show Chat' : 'Hide Chat'}          </button>        </div>      </div>      <div className={'grid gap-3 ' + (chatCollapsed ? 'grid-cols-1' : 'lg:grid-cols-[1fr_340px] max-lg:grid-cols-1')}>        {/* LEFT — Preview */}        <div className="flex flex-col gap-3 min-w-0">          {/* Thinking steps */}          {isWorking && thinkingSteps.length > 0 && (            <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>              <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>VA Thinking</div>              <div className="space-y-1">                {thinkingSteps.map((step, i) => (                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px]" style={{ color: C.textSec }}>                    <CheckCircle2 size={11} style={{ color: C.success }} />                    {step}                  </motion.div>                ))}                <motion.div className="flex items-center gap-2 text-[11px]" style={{ color: C.textMute }}>                  <motion.div className="h-2 w-2 rounded-full border" style={{ borderColor: '#DCFF00', borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />                  Working...                </motion.div>              </div>            </div>          )}          {/* Preview */}          <div className="rounded-lg p-3 flex-1" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>{currentSite ? currentSite.name : 'Preview'}</span>              <div className="flex items-center gap-1">                {(['desktop', 'tablet', 'mobile'] as const).map(d => (                  <button key={d} onClick={() => setDevice(d)} className="rounded p-1" style={{ background: device === d ? C.hover : 'transparent' }}>                    {d === 'desktop' ? <Monitor size={12} style={{ color: device === d ? C.text : C.textMute }} /> : d === 'tablet' ? <Tablet size={12} style={{ color: device === d ? C.text : C.textMute }} /> : <Smartphone size={12} style={{ color: device === d ? C.text : C.textMute }} />}                  </button>                ))}              </div>            </div>            {isWorking && (              <div className="flex flex-col items-center justify-center py-20">                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid ' + C.borderDef, borderTopColor: '#DCFF00' }} />                <div className="mt-3 text-[12px]" style={{ color: C.textMute }}>Generating with {llmModel}...</div>              </div>            )}            {!isWorking && currentSite && (              <>                <div className="rounded-md overflow-hidden" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }}>                  <iframe key={currentSite.url + device} srcDoc={currentSite.html} title="preview" sandbox="allow-scripts allow-same-origin allow-popups" style={{ width: deviceWidth, maxWidth: '100%', height: '550px', border: 'none', margin: '0 auto', display: 'block' }} />                </div>                {/* Score + emoji review */}                <div className="mt-2 flex items-center justify-between">                  <div className="flex items-center gap-2">                    <span className="text-[14px] font-bold" style={{ color: currentSite.score >= 22 ? C.success : C.warn }}>{currentSite.score}/30</span>                    <span className="text-[11px]" style={{ color: C.textMute }}>{currentSite.review?.verdict || ''}</span>                  </div>                  <div className="flex gap-1.5">                    {[                      { e: '\u{1F929}', l: 'Love', v: 5, a: 'approve' },                      { e: '\u{1F60D}', l: 'Great', v: 4, a: 'approve' },                      { e: '\u{1F610}', l: 'Okay', v: 3, a: 'neutral' },                      { e: '\u{1F615}', l: 'Work', v: 2, a: 'iterate' },                      { e: '\u{1F621}', l: 'Trash', v: 1, a: 'reject' },                    ].map(r => (                      <button key={r.e} onClick={() => rateSite(r.e, r.v, r.a)} className="flex flex-col items-center rounded-md p-1.5" style={{ background: reviewEmojis[currentSite.url] === r.v ? 'rgba(220,255,0,0.1)' : C.card, border: '1px solid ' + C.borderDef }}>                        <span className="text-[18px]">{r.e}</span>                      </button>                    ))}                  </div>                </div>                <div className="mt-2 flex gap-2">                  <a href={currentSite.url} target="_blank" rel="noopener" className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Open full</a>                  <button onClick={() => { if (currentSite) generate('mutate ' + currentSite.name, currentSite.name); }} className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Mutate</button>                </div>              </>            )}            {!isWorking && !currentSite && (              <div className="flex flex-col items-center justify-center py-20">                <Wand2 size={28} strokeWidth={1} style={{ color: C.textMute }} />                <div className="mt-2 text-[12px]" style={{ color: C.textMute }}>Click a quick prompt to generate</div>              </div>            )}          </div>          {/* History */}          {history.length > 0 && (            <div className="flex gap-2 overflow-x-auto pb-1">              {history.map((h, i) => (                <button key={i} onClick={() => setCurrentSite({ html: h.html, review: h.review, url: h.url, score: h.score, name: h.name })} className="flex-shrink-0 rounded-md p-2" style={{ background: currentSite?.url === h.url ? C.hover : C.card, border: '1px solid ' + C.borderDef, minWidth: 100 }}>                  <div className="text-[10px] font-medium truncate" style={{ color: C.text }}>{h.name}</div>                  <div className="text-[9px]" style={{ color: h.score >= 22 ? C.success : C.warn }}>{h.score}/30</div>                </button>              ))}            </div>          )}        </div>        {/* RIGHT — Chat (collapsible) */}        {!chatCollapsed && (          <div className="flex flex-col rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef, height: 'fit-content', maxHeight: '70vh' }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>VA Chat</span>              <button onClick={() => setChatCollapsed(true)} className="text-[10px]" style={{ color: C.textMute }}>Hide</button>            </div>            <div className="flex-1 overflow-y-auto space-y-1.5 mb-2" style={{ minHeight: '200px' }}>              {chatMessages.map((msg, i) => (                <div key={i} className={'rounded-md p-2 text-[11px] ' + (msg.role === 'user' ? 'ml-6' : 'mr-6')} style={{ background: msg.role === 'user' ? 'rgba(220,255,0,0.05)' : C.card, border: '1px solid ' + C.borderDef }}>                  <div className="text-[8px] font-bold uppercase mb-0.5" style={{ color: msg.role === 'user' ? C.textMute : '#DCFF00' }}>{msg.role === 'user' ? 'You' : 'VA'}</div>                  <div style={{ color: C.textSec, lineHeight: 1.4 }}>{msg.content}</div>                </div>              ))}              {isWorking && (                <div className="flex gap-1 ml-6">                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} className="h-1.5 w-1.5 rounded-full" style={{ background: C.textMute }} />)}                </div>              )}            </div>            {/* Quick prompts */}            <div className="flex flex-wrap gap-1 mb-2">              {['Luxury fashion', 'SaaS platform', 'Fitness app', 'Portfolio'].map(q => (                <button key={q} onClick={() => { setChatMessages(p => [...p, { role: 'user', content: 'Build a ' + q }]); generate('Build a ' + q, q.split(' ')[0]); }} className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}>{q}</button>              ))}            </div>            <div className="flex gap-1">              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message VA..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} />              <button onClick={sendChat} disabled={isWorking || !chatInput.trim()} className="rounded-md px-2.5 py-1.5 text-[11px]" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Send</button>            </div>          </div>        )}      </div>    </div>  );}
+}function ArtistTab() {  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([    { role: 'assistant', content: "I'm ZenForge's Virtual Artist. I autonomously create premium websites 24/7. Type a request or click a quick prompt — I'll build it immediately." },  ]);  const [chatInput, setChatInput] = useState('');  const [isWorking, setIsWorking] = useState(false);  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);  const [currentSite, setCurrentSite] = useState<{ html: string; review: any; url: string; score: number; name: string } | null>(null);  const [approvedCount, setApprovedCount] = useState(0);  const [rejectedCount, setRejectedCount] = useState(0);  const [genCount, setGenCount] = useState(0);  const [chatCollapsed, setChatCollapsed] = useState(false);  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');  const [reviewEmojis, setReviewEmojis] = useState<Record<string, number>>({});  const [history, setHistory] = useState<{ name: string; score: number; url: string; html: string; review: any }[]>([]);  const llmModel = typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest';  const generate = useCallback(async (prompt: string, name?: string) => {    setIsWorking(true);    setThinkingSteps([]);    setCurrentSite(null);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'generate', prompt, businessName: name || 'ZenForge Site', model: llmModel }),      });      if (!res.ok || !res.body) throw new Error('Generation failed');      const reader = res.body.getReader();      const decoder = new TextDecoder();      let buffer = '';      while (true) {        const { done, value } = await reader.read();        if (done) break;        buffer += decoder.decode(value, { stream: true });        const lines = buffer.split('\n');        buffer = lines.pop() || '';        for (const line of lines) {          if (!line.trim()) continue;          try {            const data = JSON.parse(line);            if (data.step === 'thinking') {              setThinkingSteps(prev => [...prev, data.message]);            } else if (data.step === 'done') {              setCurrentSite({ html: data.html, review: data.review, url: data.viewUrl, score: data.score, name: data.businessName });              setGenCount(prev => prev + 1);              setHistory(prev => [...prev, { name: data.businessName, score: data.score, url: data.viewUrl, html: data.html, review: data.review }]);              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generated "' + data.businessName + '" — AI Score: ' + data.score + '/30. Review it below!' }]);            } else if (data.step === 'error') {              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + data.message }]);            }          } catch {}        }      }    } catch (e) {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generation error: ' + (e instanceof Error ? e.message : 'unknown') }]);    } finally {      setIsWorking(false);    }  }, [llmModel]);  const sendChat = useCallback(async () => {    if (!chatInput.trim() || isWorking) return;    const msg = chatInput.trim();    setChatInput('');    setChatMessages(prev => [...prev, { role: 'user', content: msg }]);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'chat', message: msg, model: llmModel }),      });      const data = await res.json();      if (data.action === 'auto-generate') {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);        generate(data.prompt, data.businessName);      } else if (data.response) {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);      }    } catch {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);    }  }, [chatInput, isWorking, llmModel, generate]);  const rateSite = useCallback((emoji: string, value: number, action: string) => {    if (!currentSite) return;    setReviewEmojis(prev => ({ ...prev, [currentSite.url]: value }));    if (action === 'approve') {      setApprovedCount(prev => {        const n = prev + 1;        setChatMessages(p => [...p, { role: 'assistant', content: n >= 3 ? '3 approved! Sent to Evolution.' : 'Approved! ' + (3 - n) + ' more to evolve.' }]);        return n;      });    } else if (action === 'reject') {      setRejectedCount(prev => prev + 1);      setChatMessages(p => [...p, { role: 'assistant', content: 'Trashed. I will do better next time.' }]);    } else {      setChatMessages(p => [...p, { role: 'assistant', content: 'Got it. Tell me what to improve.' }]);    }  }, [currentSite]);  const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';  return (    <div className="flex flex-col gap-3">      {/* Compact stats bar */}      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>        <div className="flex items-center gap-3 text-[11px]">          <span style={{ color: C.success }}>{approvedCount} approved</span>          <span style={{ color: C.error }}>{rejectedCount} trashed</span>          <span style={{ color: C.textMute }}>{genCount} generated</span>        </div>        <div className="flex items-center gap-2">          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: isWorking ? C.warn : C.success }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />          <span className="text-[10px] font-mono uppercase" style={{ color: isWorking ? C.warn : C.success }}>{isWorking ? 'Working' : '24/7 Ready'}</span>          <button onClick={() => setChatCollapsed(!chatCollapsed)} className="rounded-md px-2 py-1 text-[10px]" style={{ background: C.surface, color: C.textMute }}>            {chatCollapsed ? 'Show Chat' : 'Hide Chat'}          </button>        </div>      </div>      <div className={'grid gap-3 ' + (chatCollapsed ? 'grid-cols-1' : 'lg:grid-cols-[1fr_340px] max-lg:grid-cols-1')}>        {/* LEFT — Preview */}        <div className="flex flex-col gap-3 min-w-0">          {/* Thinking steps */}          {isWorking && thinkingSteps.length > 0 && (            <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>              <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>VA Thinking</div>              <div className="space-y-1">                {thinkingSteps.map((step, i) => (                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px]" style={{ color: C.textSec }}>                    <CheckCircle2 size={11} style={{ color: C.success }} />                    {step}                  </motion.div>                ))}                <motion.div className="flex items-center gap-2 text-[11px]" style={{ color: C.textMute }}>                  <motion.div className="h-2 w-2 rounded-full border" style={{ borderColor: '#DCFF00', borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />                  Working...                </motion.div>              </div>            </div>          )}          {/* Preview */}          <div className="rounded-lg p-3 flex-1" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>{currentSite ? currentSite.name : 'Preview'}</span>              <div className="flex items-center gap-1">                {(['desktop', 'tablet', 'mobile'] as const).map(d => (                  <button key={d} onClick={() => setDevice(d)} className="rounded p-1" style={{ background: device === d ? C.hover : 'transparent' }}>                    {d === 'desktop' ? <Monitor size={12} style={{ color: device === d ? C.text : C.textMute }} /> : d === 'tablet' ? <Tablet size={12} style={{ color: device === d ? C.text : C.textMute }} /> : <Smartphone size={12} style={{ color: device === d ? C.text : C.textMute }} />}                  </button>                ))}              </div>            </div>            {isWorking && (              <div className="flex flex-col items-center justify-center py-20">                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid ' + C.borderDef, borderTopColor: '#DCFF00' }} />                <div className="mt-3 text-[12px]" style={{ color: C.textMute }}>Generating with {llmModel}...</div>              </div>            )}            {!isWorking && currentSite && (              <>                <div className="rounded-md overflow-hidden" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }}>                  <iframe key={currentSite.url + device} srcDoc={currentSite.html} title="preview" sandbox="allow-scripts allow-same-origin allow-popups" style={{ width: deviceWidth, maxWidth: '100%', height: '550px', border: 'none', margin: '0 auto', display: 'block' }} />                </div>                {/* Score + emoji review */}                <div className="mt-2 flex items-center justify-between">                  <div className="flex items-center gap-2">                    <span className="text-[14px] font-bold" style={{ color: currentSite.score >= 22 ? C.success : C.warn }}>{currentSite.score}/30</span>                    <span className="text-[11px]" style={{ color: C.textMute }}>{currentSite.review?.verdict || ''}</span>                  </div>                  <div className="flex gap-1.5">                    {[                      { e: '\u{1F929}', l: 'Love', v: 5, a: 'approve' },                      { e: '\u{1F60D}', l: 'Great', v: 4, a: 'approve' },                      { e: '\u{1F610}', l: 'Okay', v: 3, a: 'neutral' },                      { e: '\u{1F615}', l: 'Work', v: 2, a: 'iterate' },                      { e: '\u{1F621}', l: 'Trash', v: 1, a: 'reject' },                    ].map(r => (                      <button key={r.e} onClick={() => rateSite(r.e, r.v, r.a)} className="flex flex-col items-center rounded-md p-1.5" style={{ background: reviewEmojis[currentSite.url] === r.v ? 'rgba(220,255,0,0.1)' : C.card, border: '1px solid ' + C.borderDef }}>                        <span className="text-[18px]">{r.e}</span>                      </button>                    ))}                  </div>                </div>                <div className="mt-2 flex gap-2">                  <a href={currentSite.url} target="_blank" rel="noopener" className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Open full</a>                  <button onClick={() => { if (currentSite) generate('mutate ' + currentSite.name, currentSite.name); }} className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Mutate</button>                </div>              </>            )}            {!isWorking && !currentSite && (              <div className="flex flex-col items-center justify-center py-20">                <Wand2 size={28} strokeWidth={1} style={{ color: C.textMute }} />                <div className="mt-2 text-[12px]" style={{ color: C.textMute }}>Click a quick prompt to generate</div>              </div>            )}          </div>          {/* History */}          {history.length > 0 && (            <div className="flex gap-2 overflow-x-auto pb-1">              {history.map((h, i) => (                <button key={i} onClick={() => setCurrentSite({ html: h.html, review: h.review, url: h.url, score: h.score, name: h.name })} className="flex-shrink-0 rounded-md p-2" style={{ background: currentSite?.url === h.url ? C.hover : C.card, border: '1px solid ' + C.borderDef, minWidth: 100 }}>                  <div className="text-[10px] font-medium truncate" style={{ color: C.text }}>{h.name}</div>                  <div className="text-[9px]" style={{ color: h.score >= 22 ? C.success : C.warn }}>{h.score}/30</div>                </button>              ))}            </div>          )}        </div>        {/* RIGHT — Chat (collapsible) */}        {!chatCollapsed && (          <div className="flex flex-col rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef, height: 'fit-content', maxHeight: '70vh' }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>VA Chat</span>              <button onClick={() => setChatCollapsed(true)} className="text-[10px]" style={{ color: C.textMute }}>Hide</button>            </div>            <div className="flex-1 overflow-y-auto space-y-1.5 mb-2" style={{ minHeight: '200px' }}>              {chatMessages.map((msg, i) => (                <div key={i} className={'rounded-md p-2 text-[11px] ' + (msg.role === 'user' ? 'ml-6' : 'mr-6')} style={{ background: msg.role === 'user' ? 'rgba(220,255,0,0.05)' : C.card, border: '1px solid ' + C.borderDef }}>                  <div className="text-[8px] font-bold uppercase mb-0.5" style={{ color: msg.role === 'user' ? C.textMute : '#DCFF00' }}>{msg.role === 'user' ? 'You' : 'VA'}</div>                  <div style={{ color: C.textSec, lineHeight: 1.4 }}>{msg.content}</div>                </div>              ))}              {isWorking && (                <div className="flex gap-1 ml-6">                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} className="h-1.5 w-1.5 rounded-full" style={{ background: C.textMute }} />)}                </div>              )}            </div>            {/* Quick prompts */}            <div className="flex flex-wrap gap-1 mb-2">              {['Luxury fashion', 'SaaS platform', 'Fitness app', 'Portfolio'].map(q => (                <button key={q} onClick={() => { setChatMessages(p => [...p, { role: 'user', content: 'Build a ' + q }]); generate('Build a ' + q, q.split(' ')[0]); }} className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}>{q}</button>              ))}            </div>            <div className="flex gap-1">              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message VA..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} />              <button onClick={sendChat} disabled={isWorking || !chatInput.trim()} className="rounded-md px-2.5 py-1.5 text-[11px]" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Send</button>            </div>          </div>        )}      </div>    </div>  );}
 /* ========== Settings Tab ========== */
 function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPassword, paywallAdminError, currentRotatingPassword, unlockPaywallAdmin, setPaywallAdminPassword, setPaywallAdminUnlocked, togglePaywallFromAdmin }: {
   paywallEnabled: boolean;
