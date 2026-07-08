@@ -106,8 +106,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       );
     }
 
-    // Auto-repair truncated HTML, then fix preloaders
+    // Auto-repair truncated HTML, then inject premium CSS + features
     let html = repairHtml(site.html);
+    // Inject premium CSS design system (makes any site look $50K)
+    try {
+      const { injectPremiumCSS } = await import('@/lib/premium-css-foundation');
+      html = injectPremiumCSS(html);
+    } catch (e) { console.error('[slug] CSS inject error:', e); }
+    // Inject missing premium features (JS: IntersectionObserver, counters, etc.)
     html = injectPremiumFeatures(html);
 
     return new NextResponse(html, {
