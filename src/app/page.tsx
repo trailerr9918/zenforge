@@ -2486,6 +2486,14 @@ function EvolutionTab() {
 }
 
 /* ========== Virtual Artist Tab → Technique Library Browser ========== */
+interface RecreatePrompt { id: string; title: string; category: string; type: string; charCount: number; colorCount: number; fontCount: number; }
+const RECREATE_STEPS = [
+  { label: 'Reading prompt', icon: BookOpen },
+  { label: 'Extracting spec via LLM', icon: Brain },
+  { label: 'Rendering website', icon: Sparkles },
+  { label: 'Complete', icon: CheckCircle2 },
+];
+
 function RecreateTab() {
   const [prompts, setPrompts] = useState<RecreatePrompt[]>([]);
   const [loadingPrompts, setLoadingPrompts] = useState(true);
