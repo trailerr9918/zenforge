@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase-client';
+// Lazy import
 
 /**
  * Site API — get and delete individual websites.
@@ -29,6 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
+    const { supabase } = await import("@/lib/supabase-client");
     const { error } = await supabase.from('websites').delete().eq('id', slug);
     if (error) {
       return NextResponse.json({ error: 'Delete failed', message: error.message }, { status: 500 });

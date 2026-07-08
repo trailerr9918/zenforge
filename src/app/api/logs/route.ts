@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase-client';
+// Supabase imported lazily to avoid build-time errors
 
 /**
  * ZenForge Logs API — Comprehensive Audit Logging System
@@ -91,6 +91,7 @@ export function logEvent(
 /** Persist a log entry to Supabase */
 async function persistLogEntry(entry: LogEntry): Promise<void> {
   try {
+    const { supabase } = await import("@/lib/supabase-client");
     await supabase.from('websites').upsert({
       id: entry.id,
       html: '',

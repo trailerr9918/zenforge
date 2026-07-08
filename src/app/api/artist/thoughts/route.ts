@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getArtistThoughts, loadArtistState } from '@/lib/virtual-artist';
-import { supabase } from '@/lib/supabase-client';
+// Lazy supabase import
 
 export const dynamic = 'force-dynamic';
 
