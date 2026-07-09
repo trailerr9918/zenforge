@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const result = await forgeGenerate({
       target,
       creativity,
-      model: body.model || 'glm-4-flash',
+      model: body.model || 'mistral-large-latest',
       timeoutMs: 20000,
     });
 

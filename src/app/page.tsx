@@ -364,6 +364,8 @@ function GenerateTab({ onResult }: { onResult: (r: GenResult) => void }) {
   const [whatsappPhone, setWhatsappPhone] = useState('');
   const [floatingForm, setFloatingForm] = useState(false);
   const [usePremiumLLM, setUsePremiumLLM] = useState(true); // Premium LLM generation (demo-quality output)
+  const [usePatternAssembly, setUsePatternAssembly] = useState(true); // Pattern Assembly mode (default ON)
+  const [assemblySteps, setAssemblySteps] = useState<string[]>([]);
   const [palette, setPalette] = useState('auto');
   const [seed, setSeed] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -375,10 +377,85 @@ function GenerateTab({ onResult }: { onResult: (r: GenResult) => void }) {
   const generate = useCallback(async () => {
     if (!prompt.trim() || generating) return;
     setGenerating(true); setError(null); setResult(null); setStepIdx(0);
+    setAssemblySteps([]);
     const timer = setInterval(() => setStepIdx((i) => (i < THINKING_STEPS.length - 1 ? i + 1 : i)), 500);
     try {
-      // Premium LLM path: uses GLM-4-plus with the premium generation prompt
-      // to produce demo-quality websites (matches the manual merge demo quality)
+      // === Pattern Assembly Mode (default) ===
+      // Uses Mistral for reasoning + assembles from approved premium patterns.
+      // The "master chef" approach — no raw HTML generation.
+      if (usePatternAssembly) {
+        setStepIdx(1);
+        const llmModel = localStorage.getItem('sf-llm-model') || 'mistral-large-latest';
+        const res = await fetch('/api/assemble-website', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            model: llmModel,
+            fullCreative: !usePremiumLLM, // Full creative = Mistral plans sections
+            save: true,
+          }),
+        });
+
+        if (res.ok && res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let html = '';
+          let slug = '';
+          let viewUrl = '';
+          let businessName = '';
+          let plan: any = null;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const data = JSON.parse(line);
+                if (data.step === 'thinking') {
+                  setAssemblySteps(prev => [...prev, data.message]);
+                  setStepIdx(2);
+                } else if (data.step === 'done') {
+                  html = data.html;
+                  slug = data.slug || '';
+                  viewUrl = data.viewUrl || '';
+                  businessName = data.businessName || 'ZenForge Site';
+                  plan = data.plan;
+                  setStepIdx(THINKING_STEPS.length - 1);
+                } else if (data.step === 'error') {
+                  throw new Error(data.message);
+                }
+              } catch (e) {
+                if (e instanceof Error && e.message) throw e;
+              }
+            }
+          }
+
+          if (html && html.length > 500) {
+            const r: GenResult = {
+              html,
+              slug,
+              businessName,
+              businessType: `Assembled (${plan?.style || 'pattern'})`,
+              designDNA: { designSystem: { name: plan?.style || 'Pattern Assembly' }, plan },
+              viewUrl,
+            };
+            setResult(r); onResult(r);
+            return;
+          }
+        }
+        // If assembly failed, fall through to premium LLM
+        console.warn('[generate] Pattern assembly failed, falling through to LLM');
+      }
+
+      // === Premium LLM path (fallback or full creative mode) ===
+      // Uses Mistral Large with the premium generation prompt to produce
+      // demo-quality websites via direct LLM generation.
       // Strategy: Try Groq client-side first (no timeout), then edge function streaming
       if (usePremiumLLM) {
         let html = '';
@@ -386,6 +463,7 @@ function GenerateTab({ onResult }: { onResult: (r: GenResult) => void }) {
         const llmModel = localStorage.getItem('sf-llm-model') || 'mistral-large-latest';
         const isGroqModel = llmModel.includes('llama') || llmModel.includes('mixtral');
         const isMistralModel = llmModel.startsWith('mistral');
+
 
         // Path A: Client-side Groq (no Vercel timeout)
         if (isGroqModel && groqKey) {
@@ -566,7 +644,7 @@ Generate the complete HTML website now. Return ONLY the HTML.`;
       }
     } catch (e) { clearInterval(timer); setError(e instanceof Error ? e.message : 'Generation failed'); }
     finally { setGenerating(false); }
-  }, [prompt, seed, generating, whatsapp, whatsappPhone, floatingForm, onResult, usePremiumLLM]);
+  }, [prompt, seed, generating, whatsapp, whatsappPhone, floatingForm, onResult, usePremiumLLM, usePatternAssembly]);
 
   const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';
 
@@ -586,15 +664,29 @@ Generate the complete HTML website now. Return ONLY the HTML.`;
             <div className="mb-2 text-[10px] font-medium uppercase tracking-wider" style={{ color: C.textMute }}>Quick prompts</div>
             <div className="flex flex-wrap gap-1.5">{QUICK_PROMPTS.map((q) => <Chip key={q.label} label={q.label} onClick={() => setPrompt(q.prompt)} />)}</div>
           </div>
-          {/* Premium LLM toggle — uses GLM-4-plus with premium generation prompt */}
-          <div className="mt-4 rounded-lg p-2.5" style={{ background: usePremiumLLM ? 'rgba(220,255,0,0.05)' : C.card, border: `1px solid ${usePremiumLLM ? 'rgba(220,255,0,0.3)' : C.borderDef}` }}>
+          {/* Pattern Assembly toggle — master chef mode (default ON) */}
+          <div className="mt-4 rounded-lg p-2.5" style={{ background: usePatternAssembly ? 'rgba(34,197,94,0.05)' : C.card, border: `1px solid ${usePatternAssembly ? 'rgba(34,197,94,0.3)' : C.borderDef}` }}>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[12px] font-medium" style={{ color: C.text }}>✨ Premium LLM Generation</div>
+                <div className="text-[12px] font-medium" style={{ color: C.text }}>🎨 Pattern Assembly (Master Chef)</div>
+                <div className="text-[10px] mt-0.5" style={{ color: C.textMute }}>
+                  {usePatternAssembly
+                    ? '🟢 Intelligently assembles from reviewed premium patterns + Mistral reasoning. Guaranteed 16/16 features.'
+                    : 'Raw LLM generation mode. Less cohesive, may miss features.'}
+                </div>
+              </div>
+              <Toggle checked={usePatternAssembly} onChange={setUsePatternAssembly} />
+            </div>
+          </div>
+          {/* Premium LLM toggle — uses Mistral Large with premium generation prompt */}
+          <div className="mt-4 rounded-lg p-2.5" style={{ background: usePremiumLLM ? 'rgba(34,197,94,0.05)' : C.card, border: `1px solid ${usePremiumLLM ? 'rgba(34,197,94,0.3)' : C.borderDef}` }}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[12px] font-medium" style={{ color: C.text }}>✨ Full Creative Mode</div>
                 <div className="text-[10px] mt-0.5" style={{ color: C.textMute }}>
                   {usePremiumLLM
-                    ? '🟢 GLM-4-plus generates $50K-agency-grade websites (15-30s). Demo-quality output.'
-                    : 'V5/V6 pattern assembly. Instant but basic quality.'}
+                    ? '🟢 Mistral Large plans sections intelligently. When off, uses deterministic layout.'
+                    : 'Deterministic section selection based on business type.'}
                 </div>
               </div>
               <Toggle checked={usePremiumLLM} onChange={setUsePremiumLLM} />
@@ -642,6 +734,19 @@ Generate the complete HTML website now. Return ONLY the HTML.`;
                 );
               })}
             </div>
+            {assemblySteps.length > 0 && (
+              <div className="mt-3 pt-3 border-t" style={{ borderColor: C.borderDef }}>
+                <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>Assembly Reasoning</div>
+                <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                  {assemblySteps.map((step, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-start gap-2 text-[11px]" style={{ color: C.textSec }}>
+                      <CheckCircle2 size={10} style={{ color: step.startsWith('✓') ? C.success : step.startsWith('✗') ? C.error : C.textMute, marginTop: 2 }} />
+                      <span>{step}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
           </Panel>
         )}
         {result && (
@@ -691,6 +796,9 @@ Generate the complete HTML website now. Return ONLY the HTML.`;
                 </div>
                 <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.text, letterSpacing: '-0.01em' }}>Preview will appear here</h3>
                 <p className="mt-1 text-[12px]" style={{ color: C.textMute }}>Describe your website to generate a live preview</p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="rounded-full px-2.5 py-1 text-[10px]" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: C.success }}>🎨 Pattern Assembly = Master Chef mode (recommended)</span>
+                </div>
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
                   <Chip label="Coffee shop" onClick={() => setPrompt('cozy neighborhood coffee shop with espresso bar and pastries')} />
                   <Chip label="Tech startup" onClick={() => setPrompt('SaaS startup building AI developer tools')} />
@@ -984,23 +1092,26 @@ function AgentTab({ onResult }: { onResult: (r: GenResult) => void }) {
     <div className="grid gap-3 lg:grid-cols-[420px_1fr] max-lg:grid-cols-1">
       <div className="space-y-3">
         <Panel className="p-4">
-          <SectionHeader title="AI Agent" sub="Six specialized modes · Multi-provider LLM" />
+          <SectionHeader title="AI Agent" sub="Six specialized modes · Mistral-powered" />
           {/* Model selector for AI Agent */}
           <div className="mt-3 flex gap-2">
             <select
-              value={typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'glm-4-flash' : 'glm-4-flash'}
+              value={typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest'}
               onChange={(e) => { if (typeof window !== 'undefined') localStorage.setItem('sf-llm-model', e.target.value); }}
               className="flex-1 rounded-lg px-3 py-2 text-[12px] outline-none"
               style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text, fontFamily: 'inherit' }}
             >
+              <optgroup label="Mistral (RECOMMENDED — premium output)">
+                <option value="mistral-large-latest">Mistral Large — Best quality</option>
+                <option value="mistral-small-latest">Mistral Small — Fast</option>
+                <option value="codestral-latest">Codestral — Best for code</option>
+              </optgroup>
               <optgroup label="Groq (fast, free)">
                 <option value="llama-3.3-70b-versatile">Llama 3.3 70B — Most intelligent</option>
                 <option value="llama-3.1-8b-instant">Llama 3.1 8B — Fastest</option>
-                <option value="mixtral-8x7b-32768">Mixtral 8x7B — Balanced</option>
               </optgroup>
-              <optgroup label="Z.AI (sandbox proxy)">
-                <option value="glm-4-flash">GLM-4 Flash — Fast</option>
-                <option value="glm-4-plus">GLM-4 Plus — Capable</option>
+              <optgroup label="Z.AI (fallback only)">
+                <option value="glm-4-plus">GLM-4 Plus — Fallback</option>
               </optgroup>
             </select>
           </div>
@@ -1892,7 +2003,7 @@ function EvolutionTab() {
   const [history, setHistory] = useState<any[]>([]);
   const [device, setDevice] = useState<Device>('desktop');
   const [reasoningSteps, setReasoningSteps] = useState<string[]>([]);
-  const [llmModel, setLlmModel] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'llama-3.3-70b-versatile' : 'llama-3.3-70b-versatile');
+  const [llmModel, setLlmModel] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest');
   const [groqKey, setGroqKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-groq-key') || '' : '');
   const [showGroqKey, setShowGroqKey] = useState(false);
   const [llmModels, setLlmModels] = useState<any[]>([]);
@@ -2000,7 +2111,7 @@ function EvolutionTab() {
           target: forgeTarget,
           creativity,
           save: true,
-          model: isGroqModel && groqResult ? 'glm-4-flash' : llmModel, // Use Z.AI if Groq already succeeded
+          model: isGroqModel && groqResult ? 'mistral-small-latest' : llmModel, // Prefer Mistral; fall back to user-selected model
           groqKey: groqKey || undefined,
           groqPlan: groqResult || undefined, // Pass Groq result to server
         }),
@@ -3011,52 +3122,75 @@ RULES: ONLY include sections the prompt ACTUALLY describes. Hero = 1 section. La
 }
 
 function CatalogTab() {
-  const [catalog, setCatalog] = useState<any>(null);
+  const [patterns, setPatterns] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeFolder, setActiveFolder] = useState<string>('videos');
+  const [activeType, setActiveType] = useState<string>('all');
+  const [activeSource, setActiveSource] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPicks, setSelectedPicks] = useState<Record<string, any>>({});
+  const [randomized, setRandomized] = useState<any[] | null>(null);
+  const [randomizing, setRandomizing] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [genResult, setGenResult] = useState<{ url: string; name: string } | null>(null);
+  const [genResult, setGenResult] = useState<{ url: string; name: string; sections: number } | null>(null);
+  const [starred, setStarred] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch('/api/catalog').then(r => r.json()).then(d => { setCatalog(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch('/api/pattern-explorer').then(r => r.json()).then(d => {
+      setPatterns(d.patterns || []);
+      setStats(d.stats || null);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  const folders = [
-    { id: 'videos', label: 'Videos', icon: 'V', color: '#FF6B6B', count: catalog?.videos?.length || 0 },
-    { id: 'typographies', label: 'Typography', icon: 'T', color: '#4ECDC4', count: catalog?.typographies?.length || 0 },
-    { id: 'colors', label: 'Colors', icon: 'C', color: '#FFE66D', count: catalog?.colors?.length || 0 },
-    { id: 'headers', label: 'Headers', icon: 'H', color: '#A8E6CF', count: catalog?.headers?.length || 0 },
-    { id: 'footers', label: 'Footers', icon: 'F', color: '#FF8B94', count: catalog?.footers?.length || 0 },
-    { id: 'buttons', label: 'Buttons', icon: 'B', color: '#C9A0DC', count: catalog?.buttons?.length || 0 },
-  ];
-
-  const items = catalog ? (catalog[activeFolder] || []) : [];
-  const filtered = searchQuery ? items.filter((item: any) => {
-    const str = JSON.stringify(item).toLowerCase();
-    return str.includes(searchQuery.toLowerCase());
-  }) : items;
-
-  const randomize = () => {
-    if (!catalog) return;
-    const picks: Record<string, any> = {};
-    folders.forEach(f => {
-      const arr = catalog[f.id] || [];
-      if (arr.length > 0) picks[f.id] = arr[Math.floor(Math.random() * arr.length)];
-    });
-    setSelectedPicks(picks);
+  const TYPE_ICONS: Record<string, string> = {
+    nav: '🧭', hero: '🎯', features: '✨', stats: '📊', testimonials: '💬',
+    gallery: '🖼️', pricing: '💰', faq: '❓', about: '📖', cta: '📢',
+    contact: '📧', footer: '📦', partners: '🤝', team: '👥',
   };
 
-  const generateFromPicks = async () => {
+  const types = stats?.allTypes || ['nav', 'hero', 'features', 'stats', 'testimonials', 'gallery', 'pricing', 'faq', 'about', 'cta', 'contact', 'footer'];
+
+  const filtered = patterns.filter(p => {
+    if (activeType !== 'all' && p.type !== activeType) return false;
+    if (activeSource !== 'all' && p.source !== activeSource) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return p.name.toLowerCase().includes(q) ||
+             p.type.toLowerCase().includes(q) ||
+             p.features.some((f: string) => f.toLowerCase().includes(q));
+    }
+    return true;
+  });
+
+  const toggleStar = (id: string) => {
+    setStarred(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const doRandomize16 = async () => {
+    setRandomizing(true);
+    setGenResult(null);
+    try {
+      const res = await fetch('/api/randomize-16');
+      const data = await res.json();
+      setRandomized(data.picks || []);
+    } catch {}
+    setRandomizing(false);
+  };
+
+  const generateFromRandom = async () => {
+    if (!randomized || randomized.length === 0) return;
     setGenerating(true);
     setGenResult(null);
     try {
-      const picks = Object.values(selectedPicks);
-      const prompt = 'Create a premium website using these design elements from our catalog: ' + picks.map((p: any) => JSON.stringify(p)).join(', ') + '. Include all 16 premium features.';
-      const res = await fetch('/api/va-generate', {
+      const prompt = `Create a premium website using these ${randomized.length} carefully selected design patterns: ${randomized.map(p => `${p.type}: ${p.name} (fitness ${p.fitness})`).join(', ')}. Assemble them into a cohesive, high-quality website with perfect flow and hierarchy.`;
+      const res = await fetch('/api/assemble-website', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', prompt, businessName: 'Catalog Merge', model: 'mistral-large-latest' }),
+        body: JSON.stringify({ prompt, model: 'mistral-large-latest', fullCreative: true, save: true }),
       });
       if (res.ok && res.body) {
         const reader = res.body.getReader();
@@ -3073,86 +3207,79 @@ function CatalogTab() {
             try {
               const data = JSON.parse(line);
               if (data.step === 'done') {
-                setGenResult({ url: data.viewUrl || '', name: data.businessName || 'Catalog Merge' });
+                setGenResult({ url: data.viewUrl || '', name: data.businessName || 'Assembled Site', sections: data.sectionCount || 0 });
               }
             } catch {}
           }
         }
       }
-    } catch (e) { console.error(e); }
+    } catch {}
     setGenerating(false);
   };
 
   return (
     <div className="grid gap-3 lg:grid-cols-[180px_1fr_280px] max-lg:grid-cols-1">
-      {/* Left — Folder sidebar */}
+      {/* Left — Type sidebar */}
       <div className="flex flex-col gap-1.5">
-        <div className="text-[10px] uppercase tracking-wider px-1 mb-1" style={{ color: C.textMute }}>Folders</div>
-        {folders.map(f => (
-          <button key={f.id} onClick={() => { setActiveFolder(f.id); setSearchQuery(''); }}
-            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-colors"
-            style={{ background: activeFolder === f.id ? C.hover : C.card, border: '1px solid ' + (activeFolder === f.id ? C.borderFoc : C.borderDef), color: activeFolder === f.id ? C.text : C.textMute }}>
-            <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold" style={{ background: f.color + '20', color: f.color }}>{f.icon}</div>
-            <span className="flex-1 text-left">{f.label}</span>
-            <span className="font-mono text-[10px]" style={{ color: C.textMute }}>{f.count}</span>
-          </button>
-        ))}
+        <div className="text-[10px] uppercase tracking-wider px-1 mb-1" style={{ color: C.textMute }}>Categories</div>
+        <button onClick={() => setActiveType('all')} className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-colors" style={{ background: activeType === 'all' ? C.hover : C.card, border: '1px solid ' + (activeType === 'all' ? C.borderFoc : C.borderDef), color: activeType === 'all' ? C.text : C.textMute }}>
+          <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: C.text }}>★</div>
+          <span className="flex-1 text-left">All</span>
+          <span className="font-mono text-[10px]" style={{ color: C.textMute }}>{patterns.length}</span>
+        </button>
+        {types.map((type: string) => {
+          const count = stats?.byType?.[type] || 0;
+          return (
+            <button key={type} onClick={() => { setActiveType(type); setActiveSource('all'); }} className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-colors" style={{ background: activeType === type ? C.hover : C.card, border: '1px solid ' + (activeType === type ? C.borderFoc : C.borderDef), color: activeType === type ? C.text : C.textMute }}>
+              <div className="flex h-6 w-6 items-center justify-center rounded-md text-[11px]">{TYPE_ICONS[type] || '📦'}</div>
+              <span className="flex-1 text-left capitalize">{type}</span>
+              <span className="font-mono text-[10px]" style={{ color: C.textMute }}>{count}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Center — Items grid */}
+      {/* Center — Pattern grid */}
       <div className="rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[13px] font-medium" style={{ color: C.text }}>{folders.find(f => f.id === activeFolder)?.label}</span>
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." className="rounded-md px-2.5 py-1 text-[11px] outline-none w-40" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} />
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-medium" style={{ color: C.text }}>{activeType === 'all' ? 'All Patterns' : `${activeType.charAt(0).toUpperCase() + activeType.slice(1)}s`}</span>
+            <Badge>{filtered.length}</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <select value={activeSource} onChange={e => setActiveSource(e.target.value)} className="rounded-md px-2 py-1 text-[10px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }}>
+              <option value="all">All Sources</option>
+              <option value="premium-library">Premium Library</option>
+              <option value="virtual-artist">VA Approved</option>
+            </select>
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search patterns..." className="rounded-md px-2.5 py-1 text-[11px] outline-none w-36" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} />
+          </div>
         </div>
-        {loading ? <div className="py-10 text-center text-[12px]" style={{ color: C.textMute }}>Loading catalog...</div> : (
+        {loading ? <div className="py-10 text-center text-[12px]" style={{ color: C.textMute }}>Loading patterns...</div> : filtered.length === 0 ? (
+          <div className="py-10 text-center text-[12px]" style={{ color: C.textMute }}>No patterns found. Generate parts in the VA tab to populate the catalog.</div>
+        ) : (
           <div className="grid grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-            {filtered.map((item: any, i: number) => (
-              <div key={i} className="rounded-md p-2.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
-                {activeFolder === 'videos' && (
-                  <div>
-                    <div className="font-medium truncate" style={{ color: C.text }}>{item.name || 'Untitled'}</div>
-                    <div className="font-mono text-[9px] truncate mt-0.5" style={{ color: C.textMute }}>{item.url?.slice(0, 50)}...</div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="rounded px-1.5 py-0.5 text-[8px]" style={{ background: C.surface, color: C.textMute }}>{item.type}</span>
-                      <span className="text-[9px]" style={{ color: C.textMute }}>from {item.sourcePrompt}</span>
-                    </div>
+            {filtered.map((p, i) => (
+              <div key={i} className="rounded-md p-2.5 text-[11px]" style={{ background: starred.has(p.id) ? 'rgba(34,197,94,0.05)' : C.card, border: '1px solid ' + (starred.has(p.id) ? 'rgba(34,197,94,0.3)' : C.borderDef) }}>
+                <div className="flex items-start justify-between gap-1">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate" style={{ color: C.text }}>{p.name}</div>
+                    <div className="text-[9px] mt-0.5" style={{ color: C.textMute }}>{TYPE_ICONS[p.type] || '📦'} {p.type} · {p.source === 'premium-library' ? 'Premium' : 'VA'}</div>
                   </div>
-                )}
-                {activeFolder === 'typographies' && (
-                  <div>
-                    <div style={{ color: C.text }}>{item.display}</div>
-                    <div className="text-[10px]" style={{ color: C.textMute }}>{item.body}</div>
-                    {item.accent && <div className="text-[10px]" style={{ color: '#DCFF00' }}>+ {item.accent}</div>}
+                  <button onClick={() => toggleStar(p.id)} className="flex-shrink-0" style={{ color: starred.has(p.id) ? C.success : C.textMute }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={starred.has(p.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                  </button>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <div className="flex flex-wrap gap-0.5">
+                    {p.features.slice(0, 3).map((f: string, j: number) => (
+                      <span key={j} className="rounded px-1 py-0.5 text-[8px]" style={{ background: C.surface, color: C.textMute }}>{f}</span>
+                    ))}
                   </div>
-                )}
-                {activeFolder === 'colors' && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      <span className="h-5 w-5 rounded" style={{ background: item.bg, border: '1px solid ' + C.borderDef }} />
-                      <span className="h-5 w-5 rounded" style={{ background: item.text, border: '1px solid ' + C.borderDef }} />
-                      <span className="h-5 w-5 rounded" style={{ background: item.accent, border: '1px solid ' + C.borderDef }} />
-                    </div>
-                    <span className="font-mono text-[9px]" style={{ color: C.textMute }}>{item.accent}</span>
-                  </div>
-                )}
-                {activeFolder === 'headers' && (
-                  <div>
-                    <div className="font-medium" style={{ color: C.text }}>{item.logo}</div>
-                    <div className="text-[9px] truncate" style={{ color: C.textMute }}>{item.navItems?.join(' / ')}</div>
-                  </div>
-                )}
-                {activeFolder === 'footers' && (
-                  <div>
-                    <div style={{ color: C.text }}>{item.style}</div>
-                    <div className="text-[9px]" style={{ color: C.textMute }}>{item.columns} cols | {item.hasNewsletter ? 'Newsletter' : 'No newsletter'} | {item.hasSocial ? 'Social' : 'No social'}</div>
-                  </div>
-                )}
-                {activeFolder === 'buttons' && (
-                  <div>
-                    <div style={{ color: C.text }}>{item.text}</div>
-                    <div className="text-[9px]" style={{ color: C.textMute }}>{item.type} | {item.style}</div>
-                  </div>
+                  <span className="font-mono text-[9px] font-bold" style={{ color: p.fitness >= 90 ? C.success : p.fitness >= 80 ? C.textSec : C.warn }}>{p.fitness}</span>
+                </div>
+                {p.fonts.length > 0 && (
+                  <div className="mt-1 text-[8px] truncate" style={{ color: C.textMute }}>{p.fonts.join(' · ')}</div>
                 )}
               </div>
             ))}
@@ -3160,40 +3287,720 @@ function CatalogTab() {
         )}
       </div>
 
-      {/* Right — Randomizer + Generate */}
+      {/* Right — Randomize 16 + Generate */}
       <div className="rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>
-        <div className="text-[13px] font-medium mb-1" style={{ color: C.text }}>Randomize 16</div>
-        <div className="text-[10px] mb-3" style={{ color: C.textMute }}>Pick elements from different prompts to create a unique website.</div>
-        <button onClick={randomize} className="w-full rounded-md py-2 text-[12px] font-medium mb-3" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Pick Random Elements</button>
+        <div className="text-[13px] font-medium mb-1" style={{ color: C.text }}>🎲 Randomize 16</div>
+        <div className="text-[10px] mb-3" style={{ color: C.textMute }}>Intelligently picks 16 high-quality elements across categories using diversity scoring.</div>
+        <Button variant="primary" size="lg" icon={randomizing ? Loader2 : Shuffle} onClick={doRandomize16} disabled={randomizing} className="w-full mb-3">{randomizing ? 'Picking...' : 'Randomize 16 Elements'}</Button>
 
-        {Object.keys(selectedPicks).length > 0 && (
-          <div className="space-y-1.5 mb-3">
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: C.textMute }}>Selected ({Object.keys(selectedPicks).length})</div>
-            {Object.entries(selectedPicks).map(([type, item]: [string, any]) => (
-              <div key={type} className="rounded-md p-1.5 text-[10px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
-                <span style={{ color: C.textMute }}>{type}:</span>{' '}
-                <span style={{ color: C.textSec }}>{(item.name || item.display || item.bg || item.logo || item.text || 'picked').toString().slice(0, 40)}</span>
+        {randomized && randomized.length > 0 && (
+          <div className="space-y-1.5 mb-3 max-h-[300px] overflow-y-auto">
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: C.textMute }}>Selected ({randomized.length})</div>
+            {randomized.map((p, i) => (
+              <div key={i} className="rounded-md p-1.5 text-[10px]" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+                <div className="flex items-center justify-between">
+                  <span style={{ color: C.textSec }}>{TYPE_ICONS[p.type] || '📦'} {p.type}</span>
+                  <span className="font-mono text-[8px]" style={{ color: p.fitness >= 90 ? C.success : C.textMute }}>{p.fitness}</span>
+                </div>
+                <div className="truncate text-[9px] mt-0.5" style={{ color: C.textMute }}>{p.name}</div>
               </div>
             ))}
           </div>
         )}
 
-        <button onClick={generateFromPicks} disabled={generating || Object.keys(selectedPicks).length === 0}
-          className="w-full rounded-md py-2 text-[12px] font-medium mb-2"
-          style={{ background: C.text, color: C.bg, opacity: (generating || Object.keys(selectedPicks).length === 0) ? 0.4 : 1 }}>
-          {generating ? 'Generating...' : 'Generate Website'}
-        </button>
+        {randomized && randomized.length > 0 && (
+          <Button variant="primary" size="lg" icon={generating ? Loader2 : Sparkles} onClick={generateFromRandom} disabled={generating} className="w-full mb-2">{generating ? 'Assembling...' : 'Generate Website'}</Button>
+        )}
 
         {genResult && (
           <div className="rounded-md p-2 text-[11px]" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <div style={{ color: C.success }}>Generated!</div>
-            <a href={genResult.url.replace('zenforge.site', 'www.zenforge.site')} target="_blank" rel="noopener" className="underline" style={{ color: C.textSec }}>Open website</a>
+            <div style={{ color: C.success }}>✓ Assembled {genResult.sections} sections!</div>
+            {genResult.url && <a href={genResult.url} target="_blank" rel="noopener" className="underline mt-1 block" style={{ color: C.textSec }}>Open website →</a>}
+          </div>
+        )}
+
+        {stats && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: C.borderDef }}>
+            <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>Library Stats</div>
+            <div className="space-y-1 text-[10px]" style={{ color: C.textSec }}>
+              <div className="flex justify-between"><span>Premium patterns</span><span className="font-mono">{stats.totalPremium}</span></div>
+              <div className="flex justify-between"><span>VA approved</span><span className="font-mono">{stats.totalVA}</span></div>
+              <div className="flex justify-between"><span>Section types</span><span className="font-mono">{stats.totalTypes}</span></div>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
-}function ArtistTab() {  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([    { role: 'assistant', content: "I'm ZenForge's Virtual Artist. I autonomously create premium websites 24/7. Type a request or click a quick prompt — I'll build it immediately." },  ]);  const [chatInput, setChatInput] = useState('');  const [isWorking, setIsWorking] = useState(false);  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);  const [currentSite, setCurrentSite] = useState<{ html: string; review: any; url: string; score: number; name: string } | null>(null);  const [approvedCount, setApprovedCount] = useState(0);  const [rejectedCount, setRejectedCount] = useState(0);  const [genCount, setGenCount] = useState(0);  const [chatCollapsed, setChatCollapsed] = useState(false);  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');  const [reviewEmojis, setReviewEmojis] = useState<Record<string, number>>({});  const [history, setHistory] = useState<{ name: string; score: number; url: string; html: string; review: any }[]>([]);  const llmModel = typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest';  const generate = useCallback(async (prompt: string, name?: string) => {    setIsWorking(true);    setThinkingSteps([]);    setCurrentSite(null);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'generate', prompt, businessName: name || 'ZenForge Site', model: llmModel }),      });      if (!res.ok || !res.body) throw new Error('Generation failed');      const reader = res.body.getReader();      const decoder = new TextDecoder();      let buffer = '';      while (true) {        const { done, value } = await reader.read();        if (done) break;        buffer += decoder.decode(value, { stream: true });        const lines = buffer.split('\n');        buffer = lines.pop() || '';        for (const line of lines) {          if (!line.trim()) continue;          try {            const data = JSON.parse(line);            if (data.step === 'thinking') {              setThinkingSteps(prev => [...prev, data.message]);            } else if (data.step === 'done') {              setCurrentSite({ html: data.html, review: data.review, url: data.viewUrl, score: data.score, name: data.businessName });              setGenCount(prev => prev + 1);              setHistory(prev => [...prev, { name: data.businessName, score: data.score, url: data.viewUrl, html: data.html, review: data.review }]);              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generated "' + data.businessName + '" — AI Score: ' + data.score + '/30. Review it below!' }]);            } else if (data.step === 'error') {              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + data.message }]);            }          } catch {}        }      }    } catch (e) {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generation error: ' + (e instanceof Error ? e.message : 'unknown') }]);    } finally {      setIsWorking(false);    }  }, [llmModel]);  const sendChat = useCallback(async () => {    if (!chatInput.trim() || isWorking) return;    const msg = chatInput.trim();    setChatInput('');    setChatMessages(prev => [...prev, { role: 'user', content: msg }]);    try {      const res = await fetch('/api/va-generate', {        method: 'POST',        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({ action: 'chat', message: msg, model: llmModel }),      });      const data = await res.json();      if (data.action === 'auto-generate') {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);        generate(data.prompt, data.businessName);      } else if (data.response) {        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);      }    } catch {      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);    }  }, [chatInput, isWorking, llmModel, generate]);  const rateSite = useCallback((emoji: string, value: number, action: string) => {    if (!currentSite) return;    setReviewEmojis(prev => ({ ...prev, [currentSite.url]: value }));    if (action === 'approve') {      setApprovedCount(prev => {        const n = prev + 1;        setChatMessages(p => [...p, { role: 'assistant', content: n >= 3 ? '3 approved! Sent to Evolution.' : 'Approved! ' + (3 - n) + ' more to evolve.' }]);        return n;      });    } else if (action === 'reject') {      setRejectedCount(prev => prev + 1);      setChatMessages(p => [...p, { role: 'assistant', content: 'Trashed. I will do better next time.' }]);    } else {      setChatMessages(p => [...p, { role: 'assistant', content: 'Got it. Tell me what to improve.' }]);    }  }, [currentSite]);  const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';  return (    <div className="flex flex-col gap-3">      {/* Compact stats bar */}      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>        <div className="flex items-center gap-3 text-[11px]">          <span style={{ color: C.success }}>{approvedCount} approved</span>          <span style={{ color: C.error }}>{rejectedCount} trashed</span>          <span style={{ color: C.textMute }}>{genCount} generated</span>        </div>        <div className="flex items-center gap-2">          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: isWorking ? C.warn : C.success }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />          <span className="text-[10px] font-mono uppercase" style={{ color: isWorking ? C.warn : C.success }}>{isWorking ? 'Working' : '24/7 Ready'}</span>          <button onClick={() => setChatCollapsed(!chatCollapsed)} className="rounded-md px-2 py-1 text-[10px]" style={{ background: C.surface, color: C.textMute }}>            {chatCollapsed ? 'Show Chat' : 'Hide Chat'}          </button>        </div>      </div>      <div className={'grid gap-3 ' + (chatCollapsed ? 'grid-cols-1' : 'lg:grid-cols-[1fr_340px] max-lg:grid-cols-1')}>        {/* LEFT — Preview */}        <div className="flex flex-col gap-3 min-w-0">          {/* Thinking steps */}          {isWorking && thinkingSteps.length > 0 && (            <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>              <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>VA Thinking</div>              <div className="space-y-1">                {thinkingSteps.map((step, i) => (                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px]" style={{ color: C.textSec }}>                    <CheckCircle2 size={11} style={{ color: C.success }} />                    {step}                  </motion.div>                ))}                <motion.div className="flex items-center gap-2 text-[11px]" style={{ color: C.textMute }}>                  <motion.div className="h-2 w-2 rounded-full border" style={{ borderColor: '#DCFF00', borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />                  Working...                </motion.div>              </div>            </div>          )}          {/* Preview */}          <div className="rounded-lg p-3 flex-1" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>{currentSite ? currentSite.name : 'Preview'}</span>              <div className="flex items-center gap-1">                {(['desktop', 'tablet', 'mobile'] as const).map(d => (                  <button key={d} onClick={() => setDevice(d)} className="rounded p-1" style={{ background: device === d ? C.hover : 'transparent' }}>                    {d === 'desktop' ? <Monitor size={12} style={{ color: device === d ? C.text : C.textMute }} /> : d === 'tablet' ? <Tablet size={12} style={{ color: device === d ? C.text : C.textMute }} /> : <Smartphone size={12} style={{ color: device === d ? C.text : C.textMute }} />}                  </button>                ))}              </div>            </div>            {isWorking && (              <div className="flex flex-col items-center justify-center py-20">                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid ' + C.borderDef, borderTopColor: '#DCFF00' }} />                <div className="mt-3 text-[12px]" style={{ color: C.textMute }}>Generating with {llmModel}...</div>              </div>            )}            {!isWorking && currentSite && (              <>                <div className="rounded-md overflow-hidden" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }}>                  <iframe key={currentSite.url + device} srcDoc={currentSite.html} title="preview" sandbox="allow-scripts allow-same-origin allow-popups" style={{ width: deviceWidth, maxWidth: '100%', height: '550px', border: 'none', margin: '0 auto', display: 'block' }} />                </div>                {/* Score + emoji review */}                <div className="mt-2 flex items-center justify-between">                  <div className="flex items-center gap-2">                    <span className="text-[14px] font-bold" style={{ color: currentSite.score >= 22 ? C.success : C.warn }}>{currentSite.score}/30</span>                    <span className="text-[11px]" style={{ color: C.textMute }}>{currentSite.review?.verdict || ''}</span>                  </div>                  <div className="flex gap-1.5">                    {[                      { e: '\u{1F929}', l: 'Love', v: 5, a: 'approve' },                      { e: '\u{1F60D}', l: 'Great', v: 4, a: 'approve' },                      { e: '\u{1F610}', l: 'Okay', v: 3, a: 'neutral' },                      { e: '\u{1F615}', l: 'Work', v: 2, a: 'iterate' },                      { e: '\u{1F621}', l: 'Trash', v: 1, a: 'reject' },                    ].map(r => (                      <button key={r.e} onClick={() => rateSite(r.e, r.v, r.a)} className="flex flex-col items-center rounded-md p-1.5" style={{ background: reviewEmojis[currentSite.url] === r.v ? 'rgba(220,255,0,0.1)' : C.card, border: '1px solid ' + C.borderDef }}>                        <span className="text-[18px]">{r.e}</span>                      </button>                    ))}                  </div>                </div>                <div className="mt-2 flex gap-2">                  <a href={currentSite.url} target="_blank" rel="noopener" className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Open full</a>                  <button onClick={() => { if (currentSite) generate('mutate ' + currentSite.name, currentSite.name); }} className="rounded-md px-3 py-1.5 text-[11px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec }}>Mutate</button>                </div>              </>            )}            {!isWorking && !currentSite && (              <div className="flex flex-col items-center justify-center py-20">                <Wand2 size={28} strokeWidth={1} style={{ color: C.textMute }} />                <div className="mt-2 text-[12px]" style={{ color: C.textMute }}>Click a quick prompt to generate</div>              </div>            )}          </div>          {/* History */}          {history.length > 0 && (            <div className="flex gap-2 overflow-x-auto pb-1">              {history.map((h, i) => (                <button key={i} onClick={() => setCurrentSite({ html: h.html, review: h.review, url: h.url, score: h.score, name: h.name })} className="flex-shrink-0 rounded-md p-2" style={{ background: currentSite?.url === h.url ? C.hover : C.card, border: '1px solid ' + C.borderDef, minWidth: 100 }}>                  <div className="text-[10px] font-medium truncate" style={{ color: C.text }}>{h.name}</div>                  <div className="text-[9px]" style={{ color: h.score >= 22 ? C.success : C.warn }}>{h.score}/30</div>                </button>              ))}            </div>          )}        </div>        {/* RIGHT — Chat (collapsible) */}        {!chatCollapsed && (          <div className="flex flex-col rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef, height: 'fit-content', maxHeight: '70vh' }}>            <div className="flex items-center justify-between mb-2">              <span className="text-[12px] font-medium" style={{ color: C.text }}>VA Chat</span>              <button onClick={() => setChatCollapsed(true)} className="text-[10px]" style={{ color: C.textMute }}>Hide</button>            </div>            <div className="flex-1 overflow-y-auto space-y-1.5 mb-2" style={{ minHeight: '200px' }}>              {chatMessages.map((msg, i) => (                <div key={i} className={'rounded-md p-2 text-[11px] ' + (msg.role === 'user' ? 'ml-6' : 'mr-6')} style={{ background: msg.role === 'user' ? 'rgba(220,255,0,0.05)' : C.card, border: '1px solid ' + C.borderDef }}>                  <div className="text-[8px] font-bold uppercase mb-0.5" style={{ color: msg.role === 'user' ? C.textMute : '#DCFF00' }}>{msg.role === 'user' ? 'You' : 'VA'}</div>                  <div style={{ color: C.textSec, lineHeight: 1.4 }}>{msg.content}</div>                </div>              ))}              {isWorking && (                <div className="flex gap-1 ml-6">                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} className="h-1.5 w-1.5 rounded-full" style={{ background: C.textMute }} />)}                </div>              )}            </div>            {/* Quick prompts */}            <div className="flex flex-wrap gap-1 mb-2">              {['Luxury fashion', 'SaaS platform', 'Fitness app', 'Portfolio'].map(q => (                <button key={q} onClick={() => { setChatMessages(p => [...p, { role: 'user', content: 'Build a ' + q }]); generate('Build a ' + q, q.split(' ')[0]); }} className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}>{q}</button>              ))}            </div>            <div className="flex gap-1">              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message VA..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} />              <button onClick={sendChat} disabled={isWorking || !chatInput.trim()} className="rounded-md px-2.5 py-1.5 text-[11px]" style={{ background: '#DCFF00', color: '#0A0A0A' }}>Send</button>            </div>          </div>        )}      </div>    </div>  );}
+}function ArtistTab() {
+  /* ========== VA 24/7 Autonomous Mode — Phase 2 ========== */
+  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
+    { role: 'assistant', content: "I'm ZenForge's Virtual Artist. I autonomously create premium website parts 24/7 — heroes, navs, cards, footers, CTAs. Pick a part type or let me run autonomously." },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isWorking, setIsWorking] = useState(false);
+  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
+  const [currentPart, setCurrentPart] = useState<{ html: string; review: any; score: number; partType: string; style: string; businessContext: string; id: string } | null>(null);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
+  const [genCount, setGenCount] = useState(0);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [reviewEmojis, setReviewEmojis] = useState<Record<string, number>>({});
+  const [history, setHistory] = useState<{ name: string; score: number; html: string; review: any; partType: string; id: string }[]>([]);
+  const [autoMode, setAutoMode] = useState(false);
+  const [selectedPartType, setSelectedPartType] = useState('hero');
+  const [feedbackText, setFeedbackText] = useState('');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [memorySummary, setMemorySummary] = useState<any>(null);
+  const [partApprovals, setPartApprovals] = useState<Record<string, number>>({});
+  const [subprocesses, setSubprocesses] = useState<any[]>([]);
+  const [showSubprocessPanel, setShowSubprocessPanel] = useState(false);
+  const [selectedSubprocess, setSelectedSubprocess] = useState<string | null>(null);
+  const [subprocessChat, setSubprocessChat] = useState('');
+  const [spCreating, setSpCreating] = useState(false);
+  const [spRunning, setSpRunning] = useState(false);
+
+  const llmModel = typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest';
+
+  const PART_TYPES = [
+    { id: 'hero', label: 'Hero', icon: '🎯' },
+    { id: 'nav', label: 'Nav', icon: '🧭' },
+    { id: 'card', label: 'Cards', icon: '💳' },
+    { id: 'features', label: 'Features', icon: '✨' },
+    { id: 'cta', label: 'CTA', icon: '📢' },
+    { id: 'footer', label: 'Footer', icon: '📦' },
+    { id: 'typography', label: 'Typography', icon: '🔤' },
+    { id: 'effects', label: 'Effects', icon: '🎬' },
+  ];
+
+  const STYLES = ['cinematic', 'editorial', 'glassmorphic', 'minimal', 'warm', 'brutalist'];
+
+  const generatePart = useCallback(async (partType: string, businessContext?: string) => {
+    if (isWorking) return;
+    setIsWorking(true);
+    setThinkingSteps([]);
+    setCurrentPart(null);
+    setShowFeedback(false);
+    setFeedbackText('');
+
+    const style = STYLES[Math.floor(Math.random() * STYLES.length)];
+    const context = businessContext || ['luxury fashion brand', 'tech startup', 'wellness retreat', 'cybersecurity SaaS', 'coffee shop', 'fitness app'][Math.floor(Math.random() * 6)];
+
+    try {
+      const res = await fetch('/api/va-part-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partType, style, businessContext: context, model: llmModel }),
+      });
+      if (!res.ok || !res.body) throw new Error('Part generation failed');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.step === 'thinking') {
+              setThinkingSteps(prev => [...prev, data.message]);
+            } else if (data.step === 'done') {
+              const partId = `${partType}-${Date.now()}`;
+              setCurrentPart({
+                html: data.html,
+                review: data.review,
+                score: data.score,
+                partType: data.partType,
+                style: data.style,
+                businessContext: data.businessContext,
+                id: partId,
+              });
+              setGenCount(prev => prev + 1);
+              setHistory(prev => [...prev, {
+                name: `${data.partType} (${data.style})`,
+                score: data.score,
+                html: data.html,
+                review: data.review,
+                partType: data.partType,
+                id: partId,
+              }].slice(-20));
+              setChatMessages(prev => [...prev, {
+                role: 'assistant',
+                content: `Generated ${data.partType} (${data.style} style) for ${data.businessContext} — AI Score: ${data.score}/30. Review it below!`
+              }]);
+              // Log to memory
+              fetch('/api/va-part-memory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'generate',
+                  partType: data.partType,
+                  style: data.style,
+                  score: data.score,
+                  businessContext: data.businessContext,
+                }),
+              }).catch(() => {});
+            } else if (data.step === 'error') {
+              setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + data.message }]);
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Generation error: ' + (e instanceof Error ? e.message : 'unknown') }]);
+    } finally {
+      setIsWorking(false);
+    }
+  }, [isWorking, llmModel]);
+
+  // 24/7 Auto mode — generates a new part every 30s
+  useEffect(() => {
+    if (!autoMode) return;
+    const interval = setInterval(() => {
+      if (!isWorking) {
+        const randomPart = PART_TYPES[Math.floor(Math.random() * PART_TYPES.length)].id;
+        generatePart(randomPart);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [autoMode, isWorking, generatePart]);
+
+  // Load memory summary on mount
+  useEffect(() => {
+    fetch('/api/va-part-memory').then(r => r.json()).then(d => setMemorySummary(d.summary)).catch(() => {});
+  }, []);
+
+  const sendChat = useCallback(async () => {
+    if (!chatInput.trim() || isWorking) return;
+    const msg = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', content: msg }]);
+    // If user mentions a part type, generate it
+    const lower = msg.toLowerCase();
+    const partMatch = PART_TYPES.find(p => lower.includes(p.id) || lower.includes(p.label.toLowerCase()));
+    if (partMatch) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: `On it! Generating a ${partMatch.label} part now...` }]);
+      generatePart(partMatch.id, msg);
+    } else {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'I can generate: hero, nav, card, features, cta, footer, typography, or effects. Which would you like?' }]);
+    }
+  }, [chatInput, isWorking, generatePart]);
+
+  const ratePart = useCallback((emoji: string, value: number, action: string) => {
+    if (!currentPart) return;
+    setReviewEmojis(prev => ({ ...prev, [currentPart.id]: value }));
+
+    if (action === 'approve') {
+      const newCount = (partApprovals[currentPart.partType] || 0) + 1;
+      setPartApprovals(prev => ({ ...prev, [currentPart.partType]: newCount }));
+
+      if (newCount >= 2) {
+        // Promote to Pattern Explorer
+        setChatMessages(p => [...p, { role: 'assistant', content: `🎉 ${currentPart.partType} promoted to Pattern Explorer! (${newCount} approvals)` }]);
+        // Log promotion + save HTML
+        fetch('/api/va-part-memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'promote',
+            partType: currentPart.partType,
+            style: currentPart.style,
+            score: currentPart.score,
+            businessContext: currentPart.businessContext,
+            html: currentPart.html,
+          }),
+        }).catch(() => {});
+        setApprovedCount(prev => prev + 1);
+      } else {
+        setChatMessages(p => [...p, { role: 'assistant', content: `Approved! ${2 - newCount} more approval to promote to Pattern Explorer.` }]);
+      }
+    } else if (action === 'reject') {
+      setRejectedCount(prev => prev + 1);
+      setChatMessages(p => [...p, { role: 'assistant', content: 'Trashed. I will learn from this and do better.' }]);
+      // Log trash
+      fetch('/api/va-part-memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'trash',
+          partType: currentPart.partType,
+          style: currentPart.style,
+          score: currentPart.score,
+          businessContext: currentPart.businessContext,
+          feedback: feedbackText || undefined,
+        }),
+      }).catch(() => {});
+      setShowFeedback(false);
+      setFeedbackText('');
+    } else if (action === 'iterate') {
+      setChatMessages(p => [...p, { role: 'assistant', content: 'Got it. Tell me what to improve, or I will mutate and try again.' }]);
+      setShowFeedback(true);
+      // Log iterate
+      fetch('/api/va-part-memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'iterate',
+          partType: currentPart.partType,
+          style: currentPart.style,
+          score: currentPart.score,
+          businessContext: currentPart.businessContext,
+        }),
+      }).catch(() => {});
+    }
+    // Refresh memory summary
+    setTimeout(() => fetch('/api/va-part-memory').then(r => r.json()).then(d => setMemorySummary(d.summary)).catch(() => {}), 500);
+  }, [currentPart, partApprovals, feedbackText]);
+
+  const submitFeedback = useCallback(() => {
+    if (!feedbackText.trim() || !currentPart) return;
+    fetch('/api/va-part-memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'note',
+        partType: currentPart.partType,
+        style: currentPart.style,
+        score: currentPart.score,
+        businessContext: currentPart.businessContext,
+        feedback: feedbackText,
+      }),
+    }).catch(() => {});
+    setChatMessages(p => [...p, { role: 'assistant', content: `Feedback saved: "${feedbackText}". I will avoid this next time.` }]);
+    setFeedbackText('');
+    setShowFeedback(false);
+  }, [feedbackText, currentPart]);
+
+  // === Subprocess functions ===
+  const SP_TYPES = [
+    { id: 'planner', label: 'Planner', icon: '📋' },
+    { id: 'designer', label: 'Designer', icon: '🎨' },
+    { id: 'reviewer', label: 'Reviewer', icon: '🔍' },
+    { id: 'mutator', label: 'Mutator', icon: '🔄' },
+    { id: 'researcher', label: 'Researcher', icon: '📚' },
+    { id: 'custom', label: 'Custom', icon: '⚙️' },
+  ];
+
+  const fetchSubprocesses = useCallback(async () => {
+    try {
+      const res = await fetch('/api/subprocess');
+      const data = await res.json();
+      setSubprocesses(data.subprocesses || []);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (showSubprocessPanel) fetchSubprocesses();
+  }, [showSubprocessPanel, fetchSubprocesses]);
+
+  const createSub = useCallback(async (type: string, task: string) => {
+    setSpCreating(true);
+    try {
+      const res = await fetch('/api/subprocess', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', type, task, model: llmModel }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Auto-run immediately
+        const spId = data.subprocess.id;
+        setSpRunning(true);
+        const runRes = await fetch('/api/subprocess', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'run', id: spId }),
+        });
+        if (runRes.ok && runRes.body) {
+          const reader = runRes.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() || '';
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const d = JSON.parse(line);
+                if (d.step === 'done') {
+                  setChatMessages(p => [...p, { role: 'assistant', content: `🤖 ${type} subprocess completed! Status: ${d.subprocess?.status}` }]);
+                }
+              } catch {}
+            }
+          }
+        }
+        setSpRunning(false);
+        fetchSubprocesses();
+      }
+    } catch {}
+    setSpCreating(false);
+  }, [llmModel, fetchSubprocesses]);
+
+  const killSub = useCallback(async (id: string) => {
+    await fetch('/api/subprocess', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'kill', id }) });
+    fetchSubprocesses();
+  }, [fetchSubprocesses]);
+
+  const deleteSub = useCallback(async (id: string) => {
+    await fetch('/api/subprocess', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id }) });
+    if (selectedSubprocess === id) setSelectedSubprocess(null);
+    fetchSubprocesses();
+  }, [fetchSubprocesses, selectedSubprocess]);
+
+  const sendSubChat = useCallback(async () => {
+    if (!subprocessChat.trim() || !selectedSubprocess) return;
+    const msg = subprocessChat.trim();
+    setSubprocessChat('');
+    try {
+      const res = await fetch('/api/subprocess', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'chat', id: selectedSubprocess, message: msg }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        fetchSubprocesses();
+      }
+    } catch {}
+  }, [subprocessChat, selectedSubprocess, fetchSubprocesses]);
+
+  const autoSpawn = useCallback(async () => {
+    setSpRunning(true);
+    try {
+      const res = await fetch('/api/subprocess', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'autoSpawn', partType: selectedPartType, businessContext: 'premium brand', model: llmModel }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setChatMessages(p => [...p, { role: 'assistant', content: `🤖 Auto-spawned ${data.count} subprocesses (Designer → Reviewer → Mutator chain)` }]);
+        fetchSubprocesses();
+      }
+    } catch {}
+    setSpRunning(false);
+  }, [selectedPartType, llmModel, fetchSubprocesses]);
+
+  const selectedSub = subprocesses.find(s => s.id === selectedSubprocess);
+
+  const deviceWidth = device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px';
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Stats bar */}
+      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+        <div className="flex items-center gap-3 text-[11px]">
+          <span style={{ color: C.success }}>{approvedCount} promoted</span>
+          <span style={{ color: C.error }}>{rejectedCount} trashed</span>
+          <span style={{ color: C.textMute }}>{genCount} generated</span>
+          {memorySummary && <span style={{ color: C.textMute }}>· Avg: {memorySummary.avgScore}/30</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: isWorking ? C.warn : (autoMode ? C.success : C.textMute) }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />
+          <span className="text-[10px] font-mono uppercase" style={{ color: isWorking ? C.warn : (autoMode ? C.success : C.textMute) }}>{isWorking ? 'Working' : autoMode ? '24/7 AUTO' : 'Idle'}</span>
+          <button onClick={() => setAutoMode(!autoMode)} className="rounded-md px-2 py-1 text-[10px] font-medium" style={{ background: autoMode ? 'rgba(34,197,94,0.1)' : C.surface, color: autoMode ? C.success : C.textMute, border: '1px solid ' + (autoMode ? 'rgba(34,197,94,0.3)' : C.borderDef) }}>{autoMode ? 'Stop Auto' : 'Start 24/7'}</button>
+          <button onClick={() => { setShowSubprocessPanel(!showSubprocessPanel); if (!showSubprocessPanel) fetchSubprocesses(); }} className="rounded-md px-2 py-1 text-[10px] font-medium" style={{ background: showSubprocessPanel ? 'rgba(99,102,241,0.1)' : C.surface, color: showSubprocessPanel ? '#8B5CF6' : C.textMute, border: '1px solid ' + (showSubprocessPanel ? 'rgba(99,102,241,0.3)' : C.borderDef) }}>🤖 Agents {subprocesses.length > 0 && `(${subprocesses.filter(s => s.status === 'running' || s.status === 'thinking').length})`}</button>
+          <button onClick={() => setChatCollapsed(!chatCollapsed)} className="rounded-md px-2 py-1 text-[10px]" style={{ background: C.surface, color: C.textMute }}>{chatCollapsed ? 'Chat' : 'Hide'}</button>
+        </div>
+      </div>
+
+      {/* Part type selector */}
+      <div className="flex flex-wrap gap-1.5">
+        {PART_TYPES.map(pt => (
+          <button key={pt.id} onClick={() => setSelectedPartType(pt.id)} disabled={isWorking} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all" style={{ background: selectedPartType === pt.id ? C.hover : C.card, color: selectedPartType === pt.id ? C.text : C.textMute, border: '1px solid ' + (selectedPartType === pt.id ? C.borderHov : C.borderDef) }}>
+            <span className="text-[14px]">{pt.icon}</span>
+            {pt.label}
+          </button>
+        ))}
+        <Button size="sm" variant="primary" icon={isWorking ? Loader2 : Sparkles} onClick={() => generatePart(selectedPartType)} disabled={isWorking} className="ml-auto">Generate {selectedPartType}</Button>
+      </div>
+
+      <div className={'grid gap-3 ' + (chatCollapsed ? 'grid-cols-1' : 'lg:grid-cols-[1fr_340px] max-lg:grid-cols-1')}>
+        {/* LEFT — Preview + Review */}
+        <div className="flex flex-col gap-3 min-w-0">
+          {/* Thinking steps */}
+          {isWorking && thinkingSteps.length > 0 && (
+            <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+              <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: C.textMute }}>VA Thinking</div>
+              <div className="space-y-1">
+                {thinkingSteps.map((step, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px]" style={{ color: C.textSec }}>
+                    <CheckCircle2 size={11} style={{ color: C.success }} />
+                    {step}
+                  </motion.div>
+                ))}
+                <motion.div className="flex items-center gap-2 text-[11px]" style={{ color: C.textMute }}>
+                  <motion.div className="h-2 w-2 rounded-full border" style={{ borderColor: C.success, borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
+                  Working...
+                </motion.div>
+              </div>
+            </div>
+          )}
+
+          {/* Preview */}
+          <div className="rounded-lg p-3 flex-1" style={{ background: C.surface, border: '1px solid ' + C.borderDef }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-medium" style={{ color: C.text }}>{currentPart ? `${currentPart.partType} (${currentPart.style})` : 'Preview'}</span>
+              <div className="flex items-center gap-1">
+                {(['desktop', 'tablet', 'mobile'] as const).map(d => (
+                  <button key={d} onClick={() => setDevice(d)} className="rounded p-1" style={{ background: device === d ? C.hover : 'transparent' }}>
+                    {d === 'desktop' ? <Monitor size={12} style={{ color: device === d ? C.text : C.textMute }} /> : d === 'tablet' ? <Tablet size={12} style={{ color: device === d ? C.text : C.textMute }} /> : <Smartphone size={12} style={{ color: device === d ? C.text : C.textMute }} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {isWorking && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid ' + C.borderDef, borderTopColor: C.success }} />
+                <div className="mt-3 text-[12px]" style={{ color: C.textMute }}>Generating with {llmModel}...</div>
+              </div>
+            )}
+            {!isWorking && currentPart && (
+              <>
+                <div className="rounded-md overflow-hidden" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }}>
+                  <iframe key={currentPart.id + device} srcDoc={currentPart.html} title="preview" sandbox="allow-scripts allow-same-origin allow-popups" style={{ width: deviceWidth, maxWidth: '100%', height: '450px', border: 'none', margin: '0 auto', display: 'block' }} />
+                </div>
+                {/* Score + review details */}
+                <div className="mt-2 rounded-md p-2.5" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[16px] font-bold" style={{ color: currentPart.score >= 22 ? C.success : C.warn }}>{currentPart.score}/30</span>
+                      <Badge color={currentPart.score >= 22 ? 'success' : 'warn'}>{currentPart.review?.verdict || '—'}</Badge>
+                    </div>
+                    <span className="text-[10px]" style={{ color: C.textMute }}>AI Reviewer</span>
+                  </div>
+                  {currentPart.review?.issues?.length > 0 && (
+                    <div className="mb-1.5">
+                      <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: C.error }}>Issues</div>
+                      <div className="space-y-0.5">{currentPart.review.issues.slice(0, 3).map((issue: string, i: number) => <div key={i} className="text-[10px]" style={{ color: C.textSec }}>• {issue}</div>)}</div>
+                    </div>
+                  )}
+                  {currentPart.review?.strengths?.length > 0 && (
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: C.success }}>Strengths</div>
+                      <div className="space-y-0.5">{currentPart.review.strengths.slice(0, 3).map((s: string, i: number) => <div key={i} className="text-[10px]" style={{ color: C.textSec }}>• {s}</div>)}</div>
+                    </div>
+                  )}
+                </div>
+                {/* Emoji review */}
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[11px]" style={{ color: C.textMute }}>Rate this part:</span>
+                  <div className="flex gap-1.5">
+                    {[
+                      { e: '\u{1F929}', l: 'Love', v: 5, a: 'approve' },
+                      { e: '\u{1F60D}', l: 'Great', v: 4, a: 'approve' },
+                      { e: '\u{1F610}', l: 'Okay', v: 3, a: 'iterate' },
+                      { e: '\u{1F615}', l: 'Work', v: 2, a: 'iterate' },
+                      { e: '\u{1F621}', l: 'Trash', v: 1, a: 'reject' },
+                    ].map(r => (
+                      <button key={r.e} onClick={() => ratePart(r.e, r.v, r.a)} className="flex flex-col items-center rounded-md p-1.5 transition-all" style={{ background: reviewEmojis[currentPart.id] === r.v ? 'rgba(34,197,94,0.15)' : C.card, border: '1px solid ' + (reviewEmojis[currentPart.id] === r.v ? 'rgba(34,197,94,0.4)' : C.borderDef) }}>
+                        <span className="text-[18px]">{r.e}</span>
+                        <span className="text-[8px] mt-0.5" style={{ color: C.textMute }}>{r.l}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Feedback box */}
+                {showFeedback && (
+                  <div className="mt-2 rounded-md p-2.5" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+                    <div className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: C.textMute }}>What's wrong? (for learning)</div>
+                    <div className="flex gap-1.5">
+                      <input value={feedbackText} onChange={e => setFeedbackText(e.target.value)} placeholder="e.g. spacing too tight, colors clash, hero not bold enough..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.surface, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') submitFeedback(); }} />
+                      <Button size="sm" variant="primary" onClick={submitFeedback}>Save</Button>
+                    </div>
+                  </div>
+                )}
+                {/* Actions */}
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="secondary" icon={RefreshCw} onClick={() => generatePart(currentPart.partType, currentPart.businessContext)}>Regenerate</Button>
+                  <Button size="sm" variant="ghost" icon={Download} onClick={() => { if (currentPart) { const blob = new Blob([currentPart.html], { type: 'text/html' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${currentPart.partType}-${currentPart.style}.html`; a.click(); URL.revokeObjectURL(url); } }}>Download</Button>
+                </div>
+              </>
+            )}
+            {!isWorking && !currentPart && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Wand2 size={28} strokeWidth={1} style={{ color: C.textMute }} />
+                <div className="mt-2 text-[13px] font-medium" style={{ color: C.text }}>Virtual Artist — 24/7 Autonomous</div>
+                <div className="mt-1 text-[12px]" style={{ color: C.textMute }}>Pick a part type above and click Generate, or start 24/7 auto mode</div>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="rounded-full px-2.5 py-1 text-[10px]" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#8B5CF6' }}>💡 Tip: Start 24/7 auto mode for continuous generation</span>
+                  <span className="rounded-full px-2.5 py-1 text-[10px]" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: C.success }}>💡 2 approvals = promote to Pattern Explorer</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* History */}
+          {history.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {history.map((h, i) => (
+                <button key={i} onClick={() => setCurrentPart({ html: h.html, review: h.review, score: h.score, partType: h.partType, style: h.name.split('(')[1]?.replace(')', '') || '', businessContext: '', id: h.id })} className="flex-shrink-0 rounded-md p-2" style={{ background: currentPart?.id === h.id ? C.hover : C.card, border: '1px solid ' + C.borderDef, minWidth: 110 }}>
+                  <div className="text-[10px] font-medium truncate" style={{ color: C.text }}>{h.name}</div>
+                  <div className="text-[9px]" style={{ color: h.score >= 22 ? C.success : C.warn }}>{h.score}/30</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT — Chat (collapsible) */}
+        {!chatCollapsed && (
+          <div className="flex flex-col rounded-lg p-3" style={{ background: C.surface, border: '1px solid ' + C.borderDef, height: 'fit-content', maxHeight: '70vh' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-medium" style={{ color: C.text }}>VA Chat</span>
+              <button onClick={() => setChatCollapsed(true)} className="text-[10px]" style={{ color: C.textMute }}>Hide</button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-1.5 mb-2" style={{ minHeight: '200px' }}>
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={'rounded-md p-2 text-[11px] ' + (msg.role === 'user' ? 'ml-6' : 'mr-6')} style={{ background: msg.role === 'user' ? 'rgba(255,255,255,0.06)' : C.card, border: '1px solid ' + C.borderDef }}>
+                  <div className="text-[8px] font-bold uppercase mb-0.5" style={{ color: msg.role === 'user' ? C.textMute : C.text }}>{msg.role === 'user' ? 'You' : 'VA'}</div>
+                  <div style={{ color: C.textSec, lineHeight: 1.4 }}>{msg.content}</div>
+                </div>
+              ))}
+              {isWorking && (
+                <div className="flex gap-1 ml-6">
+                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} className="h-1.5 w-1.5 rounded-full" style={{ background: C.textMute }} />)}
+                </div>
+              )}
+            </div>
+            {/* Quick prompts */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {['Hero', 'Cards', 'Footer', 'CTA'].map(q => (
+                <button key={q} onClick={() => { setChatMessages(p => [...p, { role: 'user', content: 'Generate a ' + q }]); generatePart(q.toLowerCase()); }} className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}>{q}</button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message VA..." className="flex-1 rounded-md px-2 py-1.5 text-[11px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} />
+              <button onClick={sendChat} disabled={isWorking || !chatInput.trim()} className="rounded-md px-2.5 py-1.5 text-[11px] font-medium" style={{ background: C.text, color: C.canvas, opacity: (isWorking || !chatInput.trim()) ? 0.4 : 1 }}>Send</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Subprocess Panel — Collapsible sidebar (replaces modal for better UX) */}
+      <AnimatePresence>
+        {showSubprocessPanel && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+            <Panel className="p-0" style={{ maxHeight: '600px' }}>
+              <div className="flex h-full">
+                {/* Left — Subprocess list + quick spawn */}
+                <div className="w-[200px] flex-shrink-0 border-r overflow-y-auto" style={{ borderColor: C.borderDef }}>
+                  <div className="p-2.5 border-b" style={{ borderColor: C.borderDef }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-semibold" style={{ color: C.text }}>🤖 Agents</span>
+                      <Badge color="info">{subprocesses.length}</Badge>
+                    </div>
+                    <Button size="sm" variant="primary" icon={spRunning ? Loader2 : Zap} onClick={autoSpawn} disabled={spRunning} className="w-full mb-2">{spRunning ? 'Spawning...' : 'Auto-Chain'}</Button>
+                    <div className="text-[9px] uppercase tracking-wider mb-1.5" style={{ color: C.textMute }}>Quick Spawn</div>
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {SP_TYPES.map(sp => (
+                        <button key={sp.id} onClick={() => createSub(sp.id, `Generate a premium ${selectedPartType} section for a premium brand`)} disabled={spCreating || spRunning} className="flex flex-col items-center rounded p-1.5 text-[8px] font-medium" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textSec, opacity: (spCreating || spRunning) ? 0.4 : 1 }} title={sp.label}>
+                          <span className="text-[14px]">{sp.icon}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-1.5">
+                    {subprocesses.length === 0 ? (
+                      <div className="py-4 text-center text-[10px]" style={{ color: C.textMute }}>No agents yet</div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {subprocesses.map(sp => (
+                          <button key={sp.id} onClick={() => setSelectedSubprocess(sp.id)} className="flex w-full items-center gap-1.5 rounded p-1.5 text-left text-[10px]" style={{ background: selectedSubprocess === sp.id ? C.hover : 'transparent' }}>
+                            <span className="text-[12px]">{SP_TYPES.find(t => t.id === sp.type)?.icon || '⚙️'}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium" style={{ color: C.text }}>{sp.name}</div>
+                              <div className="text-[8px]" style={{ color: sp.status === 'done' ? C.success : sp.status === 'error' ? C.error : sp.status === 'running' || sp.status === 'thinking' ? C.warn : C.textMute }}>{sp.status}</div>
+                            </div>
+                            {sp.promoted && <span className="text-[10px]">⭐</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right — Detail + chat + emoji rating */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {selectedSub ? (
+                    <>
+                      <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: C.borderDef }}>
+                        <div className="min-w-0">
+                          <div className="text-[12px] font-medium truncate" style={{ color: C.text }}>{selectedSub.name}</div>
+                          <div className="text-[9px]" style={{ color: C.textMute }}>{selectedSub.type} · {selectedSub.model} · {selectedSub.status}{selectedSub.reviewScore !== null ? ` · ${selectedSub.reviewScore}/30` : ''}{selectedSub.promoted ? ' · ⭐ promoted' : ''}</div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {selectedSub.status !== 'killed' && selectedSub.status !== 'done' && selectedSub.status !== 'error' && <Button size="sm" variant="danger" icon={X} onClick={() => killSub(selectedSub.id)}></Button>}
+                          <Button size="sm" variant="ghost" icon={Trash2} onClick={() => deleteSub(selectedSub.id)}></Button>
+                        </div>
+                      </div>
+
+                      {/* Output preview */}
+                      {selectedSub.outputLength > 0 && (
+                        <div className="border-b" style={{ borderColor: C.borderDef }}>
+                          <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: C.textMute }}>Output ({selectedSub.outputLength} chars)</div>
+                          <div className="max-h-[150px] overflow-y-auto px-3 pb-2">
+                            {selectedSub.outputType === 'html' ? (
+                              <iframe srcDoc={selectedSub.outputPreview || '<p>No preview</p>'} sandbox="allow-scripts" className="w-full h-[140px] rounded" style={{ border: '1px solid ' + C.borderDef, background: '#fff' }} />
+                            ) : (
+                              <pre className="text-[9px] font-mono whitespace-pre-wrap rounded p-2" style={{ background: C.card, color: C.textSec, border: '1px solid ' + C.borderDef, maxHeight: '140px', overflow: 'auto' }}>{selectedSub.outputPreview || '(no output)'}</pre>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Emoji rating */}
+                      {selectedSub.status === 'done' && (
+                        <div className="flex items-center justify-center gap-2 py-2 border-b" style={{ borderColor: C.borderDef }}>
+                          <span className="text-[9px]" style={{ color: C.textMute }}>Rate:</span>
+                          {[
+                            { e: '🤩', v: 5 }, { e: '😍', v: 4 }, { e: '😐', v: 3 }, { e: '😕', v: 2 }, { e: '😡', v: 1 },
+                          ].map(r => (
+                            <button key={r.v} onClick={async () => {
+                              await fetch('/api/subprocess', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rate', id: selectedSub.id, rating: r.v }) });
+                              fetchSubprocesses();
+                              setChatMessages(p => [...p, { role: 'assistant', content: `${r.e} Rating submitted for ${selectedSub.name}` }]);
+                            }} className="text-[18px] rounded p-1" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>{r.e}</button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Chat */}
+                      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        {selectedSub.chat && selectedSub.chat.length > 0 ? (
+                          selectedSub.chat.map((msg: any, i: number) => (
+                            <div key={i} className="rounded p-1.5 text-[10px]" style={{ background: msg.role === 'user' ? 'rgba(99,102,241,0.05)' : C.card, border: '1px solid ' + C.borderDef }}>
+                              <div className="text-[7px] font-bold uppercase" style={{ color: msg.role === 'user' ? '#8B5CF6' : C.textMute }}>{msg.role}</div>
+                              <div style={{ color: C.textSec }}>{typeof msg.content === 'string' ? msg.content.slice(0, 200) : ''}</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-4 text-center text-[10px]" style={{ color: C.textMute }}>No messages yet</div>
+                        )}
+                      </div>
+
+                      {/* Chat input */}
+                      <div className="flex gap-1 p-2 border-t" style={{ borderColor: C.borderDef }}>
+                        <input value={subprocessChat} onChange={e => setSubprocessChat(e.target.value)} placeholder="Message agent..." className="flex-1 rounded px-2 py-1 text-[10px] outline-none" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.text }} onKeyDown={e => { if (e.key === 'Enter') sendSubChat(); }} />
+                        <Button size="sm" variant="primary" onClick={sendSubChat} disabled={!subprocessChat.trim()}>Send</Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-1 items-center justify-center text-[11px]" style={{ color: C.textMute }}>Select an agent from the left</div>
+                  )}
+                </div>
+              </div>
+            </Panel>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 /* ========== Settings Tab ========== */
 function VAMemoryPanel() {
   const [memory, setMemory] = useState<string>('');
@@ -3303,7 +4110,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
   const [section, setSection] = useState<'general' | 'appearance' | 'llm' | 'paywall' | 'integrations' | 'va-memory' | 'advanced'>('general');
   const [accentColor, setAccentColor] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('elite-accent') || '#ffffff' : '#ffffff');
   const [customAccent, setCustomAccent] = useState('#a855f7');
-  const [llmModel, setLlmModel] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'glm-4-plus');
+  const [llmModel, setLlmModel] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-llm-model') || 'mistral-large-latest' : 'mistral-large-latest');
   const [groqKey, setGroqKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('sf-groq-key') || '' : '');
   const [showGroqKey, setShowGroqKey] = useState(false);
   const [paywallPassword, setPaywallPassword] = useState('');
@@ -3473,12 +4280,12 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
                 {/* Rotating premium password — only visible to admin */}
                 <div className="rounded-lg p-3" style={{ background: 'rgba(220,255,0,0.03)', border: '1px solid rgba(220,255,0,0.15)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <RefreshCw size={13} strokeWidth={1.5} style={{ color: '#DCFF00' }} />
+                    <RefreshCw size={13} strokeWidth={1.5} style={{ color: C.text }} />
                     <div className="text-[12px] font-medium" style={{ color: C.text }}>Current Premium Password</div>
                   </div>
                   <div className="text-[11px] mb-2" style={{ color: C.textMute }}>Changes every 5 minutes. Share this with premium users for temporary access.</div>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 rounded-lg px-3 py-2 text-[16px] font-bold font-mono tracking-wider text-center" style={{ background: C.surface, color: '#DCFF00', border: '1px solid rgba(220,255,0,0.2)' }}>
+                    <code className="flex-1 rounded-lg px-3 py-2 text-[16px] font-bold font-mono tracking-wider text-center" style={{ background: C.surface, color: C.text, border: '1px solid ' + C.borderDef }}>
                       {currentRotatingPassword || '--------'}
                     </code>
                     <button
@@ -3535,7 +4342,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
                         (e.target.nextElementSibling as HTMLElement).textContent = val === '0' ? 'Locked' : `${val} prompts`;
                       }}
                       className="flex-1"
-                      style={{ accentColor: '#DCFF00' }}
+                      style={{ accentColor: C.accent }}
                     />
                     <span className="text-[12px] font-medium font-mono min-w-[80px] text-right" style={{ color: C.text }}>
                       {typeof window !== 'undefined' ? (localStorage.getItem('zf-recreate-limit') === '0' || !localStorage.getItem('zf-recreate-limit') ? 'Locked' : `${localStorage.getItem('zf-recreate-limit')} prompts`) : 'Locked'}
@@ -3562,9 +4369,9 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
                         onClick={() => { if (typeof window !== 'undefined') localStorage.setItem('zf-premium-duration', String(opt.val)); }}
                         className="flex-1 rounded-lg py-2 text-[11px] font-medium transition-colors"
                         style={{
-                          background: (typeof window !== 'undefined' ? localStorage.getItem('zf-premium-duration') || '5' : '5') === String(opt.val) ? 'rgba(220,255,0,0.1)' : C.surface,
+                          background: (typeof window !== 'undefined' ? localStorage.getItem('zf-premium-duration') || '5' : '5') === String(opt.val) ? 'rgba(255,255,255,0.08)' : C.surface,
                           border: `1px solid ${(typeof window !== 'undefined' ? localStorage.getItem('zf-premium-duration') || '5' : '5') === String(opt.val) ? 'rgba(220,255,0,0.3)' : C.borderDef}`,
-                          color: (typeof window !== 'undefined' ? localStorage.getItem('zf-premium-duration') || '5' : '5') === String(opt.val) ? '#DCFF00' : C.textMute,
+                          color: (typeof window !== 'undefined' ? localStorage.getItem('zf-premium-duration') || '5' : '5') === String(opt.val) ? C.text : C.textMute,
                         }}
                       >
                         {opt.label}
@@ -3587,7 +4394,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
         )}
         {section === 'integrations' && <div className="space-y-2"><SectionHeader title="Integrations" sub="Connect external services" />{[{ name: 'Z.AI SDK Proxy', key: 'VPS Bridge · glm-4-plus', connected: true }, { name: 'Supabase', key: 'Supabase Project', connected: true }, { name: 'Vercel', key: 'zenforge.site', connected: true }, { name: 'Groq', key: groqKey ? groqKey.slice(0, 12) + '...' : 'Add key in LLM tab', connected: !!groqKey }, { name: 'Modal', key: 'Add MODAL_TOKEN', connected: false }, { name: 'E2B Sandbox', key: 'Add E2B_API_KEY', connected: false }].map((env) => <div key={env.name} className="flex items-center justify-between rounded-md p-2.5" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div><div className="text-[12px] font-medium" style={{ color: C.text }}>{env.name}</div><div className="font-mono text-[10px]" style={{ color: C.textMute }}>{env.key}</div></div><Badge color={env.connected ? 'success' : 'warn'}>{env.connected ? 'Connected' : 'Not set'}</Badge></div>)}</div>}
         {section === 'va-memory' && <VAMemoryPanel />}
-        {section === 'advanced' && <div className="space-y-3"><SectionHeader title="Advanced" sub="System information & maintenance" /><div className="grid grid-cols-2 gap-2"><StatCard label="Renderer" value="V6 Ultra" icon={Cpu} /><StatCard label="Brain files" value="310" icon={Brain} /><StatCard label="Pattern combos" value="207T" icon={Layers} accent /><StatCard label="API routes" value="29" icon={Server} /></div><div className="rounded-md p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div className="text-[13px] font-medium" style={{ color: C.error }}>Danger zone</div><p className="mt-1 text-[11px]" style={{ color: C.textMute }}>Clear all locally-cached data and reset studio state.</p><div className="mt-2.5 flex gap-1.5"><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear localStorage?')) localStorage.clear(); }}>Clear cache</Button><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear all logs?')) fetch('/api/logs', { method: 'DELETE' }); }}>Clear logs</Button></div></div></div>}
+        {section === 'advanced' && <div className="space-y-3"><SectionHeader title="Advanced" sub="System information & maintenance" /><div className="grid grid-cols-2 gap-2"><StatCard label="Renderer" value="V7 Max" icon={Cpu} /><StatCard label="Brain files" value="310" icon={Brain} /><StatCard label="Pattern combos" value="207T" icon={Layers} accent /><StatCard label="API routes" value="35+" icon={Server} /></div><div className="rounded-md p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div className="text-[13px] font-medium" style={{ color: C.error }}>Danger zone</div><p className="mt-1 text-[11px]" style={{ color: C.textMute }}>Clear all locally-cached data and reset studio state.</p><div className="mt-2.5 flex gap-1.5"><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear localStorage?')) localStorage.clear(); }}>Clear cache</Button><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear all logs?')) fetch('/api/logs', { method: 'DELETE' }); }}>Clear logs</Button></div></div></div>}
       </Panel>
     </div>
   );
@@ -3912,7 +4719,7 @@ export default function Home() {
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
               transition={{ type: 'spring', damping: 25 }}
               className="relative w-full max-w-md rounded-2xl p-6"
-              style={{ background: C.surface, border: '1px solid ' + C.borderFoc, boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(220,255,0,0.1)' }}
+              style={{ background: C.surface, border: '1px solid ' + C.borderFoc, boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button */}
@@ -4031,7 +4838,7 @@ export default function Home() {
                     <button
                       onClick={unlockPremium}
                       className="w-full rounded-lg py-2.5 text-[13px] font-semibold transition-transform hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #DCFF00, #64CEFB)', color: '#0A0A0A' }}
+                      style={{ background: C.text, color: C.canvas }}
                     >
                       Unlock Premium (5 min)
                     </button>

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/recreate
  * Body: { "slug": "aethera-hero" } or { "title": "Aethera" }
- *       Optional: { "useLLM": true (default), "model": "glm-4-plus" }
+ *       Optional: { "useLLM": true (default), "model": "mistral-large-latest" }
  *
  * Reads a MotionSites prompt, asks the LLM to extract a STRUCTURED spec
  * (sections array + per-section type/copy/style/animation), then renders

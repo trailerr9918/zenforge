@@ -337,7 +337,7 @@ export async function extractStructuredSpecsViaLLM(
   opts: { timeoutMs?: number; model?: string; groqExtraction?: any } = {},
 ): Promise<StructuredSpec> {
   const timeoutMs = opts.timeoutMs ?? 45000;
-  const model = opts.model ?? 'glm-4-plus';
+  const model = opts.model ?? 'mistral-large-latest';
 
   // Path 0: Use pre-computed client-side Groq extraction if provided.
   // This bypasses the server-side LLM call entirely, avoiding Vercel's

@@ -238,3 +238,89 @@ html, body {
   }
 }
 
+/* ============================================================================
+ * V7 Micro-interactions & Premium Polish
+ * ========================================================================== */
+
+/* Card hover lift — applies to all Panel components on hover */
+.elite-card-hover {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, border-color 0.2s;
+}
+.elite-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Button press feedback */
+button:active:not(:disabled) {
+  transform: scale(0.97) !important;
+  transition: transform 0.05s !important;
+}
+
+/* Smooth focus rings */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Loading skeleton pulse */
+@keyframes elite-skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+.elite-skeleton {
+  animation: elite-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Fade-in animation for tab content */
+@keyframes elite-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.elite-fade-in {
+  animation: elite-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tooltip hint */
+.elite-hint {
+  position: relative;
+  cursor: help;
+}
+.elite-hint::after {
+  content: attr(data-hint);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #050505;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  margin-bottom: 4px;
+  z-index: 100;
+}
+.elite-hint:hover::after {
+  opacity: 1;
+}
+

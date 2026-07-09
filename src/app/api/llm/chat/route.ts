@@ -20,13 +20,26 @@ export const dynamic = 'force-dynamic';
  */
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1';
+const MISTRAL_API_URL = 'https://api.mistral.ai/v1';
+const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
 const SANDBOX_PROXY_URL = 'https://preview-chat-5ee50f7f-17ae-4318-9880-b2d6472d29df.space-z.ai';
-const SANDBOX_PROXY_KEY = 'process.env.VPS_BRIDGE_KEY || ""';
+const SANDBOX_PROXY_KEY = process.env.VPS_BRIDGE_KEY || '';
 
 const GROQ_MODELS = new Set([
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
   'mixtral-8x7b-32768',
+]);
+
+const MISTRAL_MODELS = new Set([
+  'mistral-large-latest',
+  'mistral-small-latest',
+  'mistral-small-2506',
+  'mistral-medium-2505',
+  'codestral-latest',
+  'codestral-2508',
+  'magistral-medium-2509',
+  'open-mixtral-8x22b',
 ]);
 
 export async function POST(req: NextRequest) {
@@ -38,12 +51,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'messages required' }, { status: 400 });
     }
 
-    const actualModel = model || 'glm-4-flash';
+    const actualModel = model || 'mistral-large-latest';
     const isGroqModel = GROQ_MODELS.has(actualModel);
+    const isMistralModel = MISTRAL_MODELS.has(actualModel) || actualModel.startsWith('mistral') || actualModel.startsWith('codestral') || actualModel.startsWith('magistral');
+    const wantMistral = provider === 'mistral' || (provider === 'auto' && (isMistralModel || !isGroqModel));
     const wantGroq = provider === 'groq' || (provider === 'auto' && isGroqModel);
-    const wantZai = provider === 'zai' || (provider === 'auto' && !isGroqModel);
+    const wantZai = provider === 'zai';
 
-    // Try Groq first if requested
+    // === MISTRAL (PRIMARY — always try first if key is available) ===
+    if (MISTRAL_KEY && (wantMistral || provider === 'auto')) {
+      try {
+        const res = await fetch(`${MISTRAL_API_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${MISTRAL_KEY}`,
+          },
+          body: JSON.stringify({
+            model: actualModel,
+            messages,
+            temperature: temperature ?? 0.5,
+            max_tokens: maxTokens || 4000,
+            stream: false,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return NextResponse.json({ ...data, _provider: 'mistral', _model: actualModel });
+        }
+        const errText = await res.text().catch(() => '');
+        console.warn('[llm/chat] Mistral returned', res.status, errText.slice(0, 100));
+      } catch (e) {
+        console.warn('[llm/chat] Mistral failed:', e instanceof Error ? e.message : 'unknown');
+      }
+    }
+
+    // Try Groq if requested
     if (wantGroq && (groqKey || process.env.GROQ_API_KEY)) {
       const key = groqKey || process.env.GROQ_API_KEY;
       try {
@@ -68,44 +112,14 @@ export async function POST(req: NextRequest) {
         }
         const errText = await res.text().catch(() => '');
         console.error('[llm/chat] Groq error:', res.status, errText.slice(0, 200));
-        // Fall through to Z.AI
       } catch (e) {
         console.error('[llm/chat] Groq failed:', e);
-        // Fall through to Z.AI
       }
     }
 
-    // Try Z.AI — VPS bridge FIRST (it's back online), then sandbox proxy
-    if (wantZai || wantGroq) {
-      const zaiModel = isGroqModel ? 'glm-4-flash' : actualModel;
-      
-      // Path 1: VPS bridge (fast, reliable, 3-5s response time)
-      try {
-        const res = await fetch('http://process.env.VPS_BRIDGE_HOST || "127.0.0.1":8765/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer process.env.VPS_BRIDGE_KEY || ""',
-          },
-          body: JSON.stringify({
-            model: zaiModel,
-            messages,
-            temperature: temperature ?? 0.5,
-            max_tokens: maxTokens || 4000,
-            stream: false,
-          }),
-          signal: AbortSignal.timeout(8000),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          return NextResponse.json({ ...data, _provider: 'zai-vps', _model: zaiModel });
-        }
-        console.error('[llm/chat] VPS bridge returned', res.status);
-      } catch (e) {
-        console.error('[llm/chat] VPS bridge failed:', e);
-      }
-
-      // Path 2: Sandbox proxy (fallback)
+    // Try Z.AI — sandbox proxy fallback (VPS bridge removed due to string-literal env bug)
+    if (wantZai || provider === 'auto') {
+      const zaiModel = isGroqModel ? 'mistral-small-latest' : actualModel;
       try {
         const res = await fetch(`${SANDBOX_PROXY_URL}/api/chat/rotated`, {
           method: 'POST',
@@ -131,7 +145,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'All LLM providers failed. Check your Groq API key or Z.AI proxy status.' },
+      { error: 'All LLM providers failed. Set MISTRAL_API_KEY env var for premium generation.' },
       { status: 502 },
     );
   } catch (e) {

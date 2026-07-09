@@ -41,7 +41,7 @@ export async function GET() {
       },
       body: JSON.stringify({
         messages: [{ role: 'user', content: 'OK' }],
-        model: 'glm-4-flash',
+        model: 'mistral-small-latest',
         max_tokens: 5,
       }),
       signal: AbortSignal.timeout(5000),

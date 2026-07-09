@@ -61,7 +61,7 @@ export interface ForgeGenerateOptions {
   avoidIds?: string[];              // technique IDs to avoid (from bad reviews)
   imageInspiration?: string;        // image URL to bias toward (VLM summary)
   sectionCount?: number;            // 2-6, default 3-4
-  model?: string;                   // default glm-4-flash
+  model?: string;                   // default mistral-large-latest
   timeoutMs?: number;               // default 30000
 }
 
@@ -128,7 +128,7 @@ export async function planForgeGeneration(opts: ForgeGenerateOptions = {}): Prom
   const target = opts.target || 'random';
   const creativity = typeof opts.creativity === 'number' ? opts.creativity : 0.5;
   const sectionCount = opts.sectionCount || (creativity > 0.7 ? 5 : creativity > 0.3 ? 4 : 3);
-  const model = opts.model || 'glm-4-flash';
+  const model = opts.model || 'mistral-large-latest';
   const timeoutMs = opts.timeoutMs || 30000;
 
   // 1. Gather candidate techniques for each part type.
@@ -140,14 +140,14 @@ export async function planForgeGeneration(opts: ForgeGenerateOptions = {}): Prom
   // 3. Call the LLM to plan — tries multi-provider (Groq + Z.AI)
   const userPrompt = `TARGET: ${target}\nCREATIVITY: ${creativity} (0=safe, 1=wild)\nDESIRED SECTION COUNT: ${sectionCount}\n${opts.imageInspiration ? `IMAGE INSPIRATION SUMMARY: ${opts.imageInspiration}\n` : ''}\nAVAILABLE TECHNIQUES (pick from these):\n${techniqueOptions}\n\nReturn ONLY the JSON plan.`;
 
-  // Try multi-provider LLM first (Groq if configured, then Z.AI)
+  // Try multi-provider LLM first (Mistral primary, Groq fallback, Z.AI last resort)
   const response = await callLLM(
     [
       { role: 'system', content: REASONER_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ],
     {
-      model: opts.model || 'llama-3.3-70b-versatile', // Default to Groq's most intelligent model
+      model: opts.model || 'mistral-large-latest',
       temperature: 0.5 + creativity * 0.5,
       maxTokens: 2000,
       provider: 'auto',

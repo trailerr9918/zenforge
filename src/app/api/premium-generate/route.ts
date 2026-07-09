@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const VPS_BRIDGE_URL = process.env.VPS_BRIDGE_URL || 'http://localhost:8765';
-const VPS_BRIDGE_KEY = process.env.VPS_BRIDGE_KEY || process.env.VPS_BRIDGE_KEY || '';
+const VPS_BRIDGE_KEY = process.env.VPS_BRIDGE_KEY || '';
 const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
 
 /**
@@ -166,7 +166,7 @@ Return ONLY the HTML, starting with <!DOCTYPE html>.`;
         'Authorization': `Bearer ${VPS_BRIDGE_KEY}`,
       },
       body: JSON.stringify({
-        model: body.model || 'glm-4-plus',
+        model: body.model || 'mistral-large-latest',
         messages: [
           { role: 'system', content: fullPrompt },
           { role: 'user', content: 'Generate the complete HTML website now. Return ONLY the HTML.' },

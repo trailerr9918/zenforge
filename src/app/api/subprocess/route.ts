@@ -1,141 +1,189 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendMemory } from '@/lib/va-memory';
+import {
+  createSubprocess, runSubprocess, chatWithSubprocess,
+  reviewSubprocess, listSubprocesses, listSubprocessesAsync, killSubprocess, deleteSubprocess,
+  getSubprocess, rateSubprocess, type SubprocessType,
+} from '@/lib/subprocess-engine';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
-
 /**
- * Subprocess System — real AI sub-agents that perform tasks.
- * Each subprocess type has a specific role and uses Mistral.
+ * /api/subprocess — Unified subprocess API
  *
- * Types:
- * - generator: Creates websites using learning prompts
- * - reviewer: Reviews HTML against 30-point scoring
- * - mutator: Mutates existing HTML with specific changes
- * - researcher: Researches design trends and best practices
- * - custom: User-defined task
+ * GET  /api/subprocess              → list all subprocesses
+ * POST /api/subprocess              → { action: 'create' | 'run' | 'chat' | 'review' | 'kill' | 'delete', ... }
+ *
+ * Actions:
+ *   create: { action: 'create', type, task, name?, model?, parentId? } → { subprocess }
+ *   run:    { action: 'run', id, input? } → { subprocess } (streams thinking via NDJSON)
+ *   chat:   { action: 'chat', id, message } → { reply }
+ *   review: { action: 'review', id, model? } → { review }
+ *   kill:   { action: 'kill', id } → { success }
+ *   delete: { action: 'delete', id } → { success }
+ *   autoSpawn: { action: 'autoSpawn', partType, businessContext, model? } → { subprocesses }
  */
+
+export async function GET() {
+  const subs = await listSubprocessesAsync();
+  return NextResponse.json({
+    count: subs.length,
+    subprocesses: subs.map(s => ({
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      status: s.status,
+      task: s.task.slice(0, 100),
+      model: s.model,
+      progress: s.progress,
+      reviewScore: s.reviewScore,
+      outputLength: s.output.length,
+      outputPreview: s.output.slice(0, 500),
+      outputType: s.outputType,
+      chatCount: s.chat.length,
+      chat: s.chat.slice(-10), // last 10 messages
+      positiveReviews: s.positiveReviews || 0,
+      promoted: s.promoted || false,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      parentId: s.parentId,
+      error: s.error,
+    })),
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, subprocessType, task, html, model } = body;
-    const mistralModel = model || 'mistral-large-latest';
+    const { action } = body;
 
-    if (action === 'execute') {
-      const timestamp = new Date().toISOString();
-      let result: any = {};
-
-      if (subprocessType === 'reviewer' && html) {
-        // Review subprocess
-        const reviewPrompt = `You are a strict website reviewer. Score this HTML 0-30.
-Categories: layout, loading, navigation, hero, typography, media, content, socialProof, interactions, forms, ecommerce, jsEffects, technical, footer, invisibleDetails (each 0-2).
-Pass = 22/30. Return JSON: {"score":N,"passed":bool,"verdict":"PASS"|"REJECT","issues":[],"improvements":[]}
-
-HTML:
-\`\`\`html
-${html.slice(0, 12000)}
-\`\`\``;
-
-        const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
-          body: JSON.stringify({ model: mistralModel, messages: [{ role: 'user', content: reviewPrompt }], temperature: 0, max_tokens: 500, stream: false }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const text = data?.choices?.[0]?.message?.content ?? '';
-          try {
-            let t = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
-            const f = t.indexOf('{'); const l = t.lastIndexOf('}');
-            if (f >= 0 && l > f) result = JSON.parse(t.slice(f, l + 1));
-          } catch {}
-        }
-        result.type = 'review';
-      }
-
-      else if (subprocessType === 'researcher' && task) {
-        // Research subprocess
-        const researchPrompt = `You are a design researcher. Research this topic and provide actionable insights for website design: ${task}. Return 3-5 specific recommendations with CSS/JS implementation tips. Be concise.`;
-
-        const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
-          body: JSON.stringify({ model: mistralModel, messages: [{ role: 'user', content: researchPrompt }], temperature: 0.7, max_tokens: 500, stream: false }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          result = { type: 'research', insights: data?.choices?.[0]?.message?.content ?? 'No insights' };
-        }
-      }
-
-      else if (subprocessType === 'mutator' && html) {
-        // Mutator subprocess
-        const mutations = ['Change color scheme', 'Rearrange sections', 'Add a section', 'Change hero layout', 'Update typography', 'Add micro-interactions'];
-        const mutation = mutations[Math.floor(Math.random() * mutations.length)];
-
-        const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
-          body: JSON.stringify({ model: mistralModel, messages: [{ role: 'user', content: `Mutate this HTML: ${mutation}. Keep ALL features. Return COMPLETE HTML.\n\n${html.slice(0, 10000)}` }], temperature: 0.7, max_tokens: 8000, stream: false }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          let mutated = data?.choices?.[0]?.message?.content ?? '';
-          mutated = mutated.replace(/^```(?:html)?\s*/i, '').replace(/\s*```\s*$/i, '');
-          const docIdx = mutated.indexOf('<!DOCTYPE');
-          if (docIdx > 0) mutated = mutated.slice(docIdx);
-          result = { type: 'mutate', mutation, html: mutated };
-        }
-      }
-
-      else if (subprocessType === 'generator' && task) {
-        // Generator subprocess — uses learning system
-        const { buildLearningPrompt } = await import('@/lib/learning-system');
-        const prompt = buildLearningPrompt('Generated Site', task);
-
-        const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
-          body: JSON.stringify({ model: mistralModel, messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 8000, stream: false }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          let genHtml = data?.choices?.[0]?.message?.content ?? '';
-          genHtml = genHtml.replace(/^```(?:html)?\s*/i, '').replace(/\s*```\s*$/i, '');
-          const docIdx = genHtml.indexOf('<!DOCTYPE');
-          if (docIdx > 0) genHtml = genHtml.slice(docIdx);
-          result = { type: 'generate', html: genHtml, task };
-        }
-      }
-
-      else if (subprocessType === 'custom' && task) {
-        // Custom subprocess
-        const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
-          body: JSON.stringify({ model: mistralModel, messages: [{ role: 'user', content: task }], temperature: 0.7, max_tokens: 2000, stream: false }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          result = { type: 'custom', response: data?.choices?.[0]?.message?.content ?? 'No response' };
-        }
-      }
-
-      appendMemory({ timestamp, type: 'note', content: `Subprocess ${subprocessType} executed task: ${task || 'review/mutate'}` });
-
-      return NextResponse.json({ success: true, result, subprocessType, timestamp });
+    // === CREATE ===
+    if (action === 'create') {
+      const sp = createSubprocess({
+        name: body.name,
+        type: body.type as SubprocessType,
+        task: body.task || '',
+        model: body.model,
+        parentId: body.parentId,
+      });
+      return NextResponse.json({ success: true, subprocess: sp });
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    // === RUN (with NDJSON streaming for progress) ===
+    if (action === 'run') {
+      const { id, input } = body;
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          const send = (obj: any) => controller.enqueue(encoder.encode(JSON.stringify(obj) + '\n'));
+          try {
+            send({ step: 'thinking', message: `Starting ${getSubprocess(id)?.type || 'subprocess'}...` });
+            const result = await runSubprocess(id, {
+              input,
+              onProgress: (msg) => send({ step: 'thinking', message: msg }),
+            });
+            send({
+              step: 'done',
+              subprocess: {
+                id: result.id,
+                status: result.status,
+                output: result.output.slice(0, 50000),
+                outputType: result.outputType,
+                progress: result.progress,
+                reviewScore: result.reviewScore,
+                error: result.error,
+              },
+            });
+          } catch (e) {
+            send({ step: 'error', message: e instanceof Error ? e.message : 'unknown' });
+          }
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
+      });
+    }
+
+    // === CHAT ===
+    if (action === 'chat') {
+      const { id, message } = body;
+      if (!id || !message) return NextResponse.json({ error: 'id and message required' }, { status: 400 });
+      const reply = await chatWithSubprocess(id, message);
+      return NextResponse.json({ success: true, reply });
+    }
+
+    // === REVIEW ===
+    if (action === 'review') {
+      const { id, model } = body;
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+      const review = await reviewSubprocess(id, { model });
+      return NextResponse.json({ success: true, review });
+    }
+
+    // === RATE (emoji review + promotion logic) ===
+    if (action === 'rate') {
+      const { id, rating, feedback } = body;
+      if (!id || ![1, 2, 3, 4, 5].includes(rating)) {
+        return NextResponse.json({ error: 'id and rating (1-5) required' }, { status: 400 });
+      }
+      const sp = rateSubprocess(id, rating, feedback);
+      if (!sp) return NextResponse.json({ error: 'Subprocess not found' }, { status: 404 });
+      return NextResponse.json({
+        success: true,
+        positiveReviews: sp.positiveReviews,
+        promoted: sp.promoted,
+        message: sp.promoted
+          ? `🎉 Promoted to Pattern Explorer! (${sp.positiveReviews} positive reviews)`
+          : rating >= 4
+            ? `Approved! ${2 - sp.positiveReviews} more to promote.`
+            : rating <= 2
+              ? 'Trashed. Feedback saved for learning.'
+              : 'Feedback saved.',
+      });
+    }
+
+    // === KILL ===
+    if (action === 'kill') {
+      const { id } = body;
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+      const success = killSubprocess(id);
+      return NextResponse.json({ success });
+    }
+
+    // === DELETE ===
+    if (action === 'delete') {
+      const { id } = body;
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+      const success = deleteSubprocess(id);
+      return NextResponse.json({ success });
+    }
+
+    // === AUTO SPAWN (VA 24/7 chain) ===
+    if (action === 'autoSpawn') {
+      const { partType, businessContext, model } = body;
+      if (!partType) return NextResponse.json({ error: 'partType required' }, { status: 400 });
+      const { autoSpawnVAChain } = await import('@/lib/subprocess-engine');
+      const subs = await autoSpawnVAChain(partType, businessContext || 'a premium brand', { model });
+      return NextResponse.json({
+        success: true,
+        count: subs.length,
+        subprocesses: subs.map(s => ({
+          id: s.id, name: s.name, type: s.type, status: s.status,
+          outputLength: s.output.length, reviewScore: s.reviewScore,
+        })),
+      });
+    }
+
+    return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'unknown' }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'unknown' },
+      { status: 500 },
+    );
   }
 }
