@@ -89,6 +89,9 @@ const LAYOUT_COMPOSITIONS = [
   { id: 'editorial-split', name: 'Editorial Split', desc: 'Alternating left/right text+image sections' },
   { id: 'asymmetric-staircase', name: 'Asymmetric Staircase', desc: 'Offset sections with varying widths' },
   { id: 'minimal-center', name: 'Minimal Center', desc: 'Centered content with generous whitespace' },
+  { id: 'magazine-overlay', name: 'Magazine Overlay', desc: 'Text overlaid on large images with serif typography' },
+  { id: 'diagonal-cut', name: 'Diagonal Cut', desc: 'Sections with clip-path diagonal edges for dynamic flow' },
+  { id: 'floating-cards', name: 'Floating Cards', desc: 'Cards floating over a gradient mesh background' },
 ];
 
 /* ============================================================================
@@ -98,17 +101,17 @@ const LAYOUT_COMPOSITIONS = [
  * use the same style.
  * ========================================================================== */
 
-let lastStyleIndex = -1;
+let lastStyles: string[] = [];
 
 function pickStyle(force?: string): string {
   if (force && STYLE_PRESETS[force]) return force;
   const styles = Object.keys(STYLE_PRESETS);
-  let idx;
-  do {
-    idx = Math.floor(Math.random() * styles.length);
-  } while (idx === lastStyleIndex && styles.length > 1);
-  lastStyleIndex = idx;
-  return styles[idx];
+  // Avoid repeating any of the last 3 styles
+  const available = styles.filter(s => !lastStyles.includes(s));
+  const pool = available.length > 0 ? available : styles;
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  lastStyles = [...lastStyles, picked].slice(-3);
+  return picked;
 }
 
 function pickLayout(): string {
@@ -292,6 +295,9 @@ section { padding: var(--zf-section-padding) 1.5rem; max-width: var(--zf-max-wid
 ${plan.layoutComposition === 'bento-grid' ? '.v7-bento { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }' : ''}
 ${plan.layoutComposition === 'editorial-split' ? '.v7-split { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; } @media(max-width:768px){.v7-split{grid-template-columns:1fr}}' : ''}
 ${plan.layoutComposition === 'asymmetric-staircase' ? '.v7-stair { margin-left: 0; } .v7-stair:nth-child(even) { margin-left: 10%; } @media(max-width:768px){.v7-stair{margin-left:0!important}}' : ''}
+${plan.layoutComposition === 'magazine-overlay' ? '.v7-magazine { position: relative; min-height: 60vh; display: flex; align-items: flex-end; } .v7-magazine-content { position: relative; z-index: 2; padding: 3rem; } .v7-magazine::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, var(--zf-bg), transparent); z-index: 1; }' : ''}
+${plan.layoutComposition === 'diagonal-cut' ? '.v7-diagonal { clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%); padding-top: 6rem; padding-bottom: 6rem; }' : ''}
+${plan.layoutComposition === 'floating-cards' ? '.v7-floating { position: relative; } .v7-floating > * { position: relative; z-index: 2; } .v7-floating::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, var(--zf-accent)11, transparent 50%), radial-gradient(circle at 70% 80%, var(--zf-accent2)11, transparent 50%); z-index: 0; }' : ''}
 `;
 
   // Assemble sections

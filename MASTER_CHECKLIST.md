@@ -54,7 +54,25 @@
 - [x] **2.19** Verified: /api/va-part-generate streams thinking steps + calls Mistral
 - [x] **2.20** Verified: /api/va-part-memory returns summary stats
 
-## Phase 7 — Final Testing ✅ COMPLETE
+## Post-Completion Upgrade — Gap Filling & Major Improvements (CURRENT FOCUS)
+
+### Phase 1 Upgrade — LLM Reliability
+- [ ] **U1.1** Add retry logic (3 retries with backoff) to llm-provider callLLM
+- [ ] **U1.2** Add smart model switching: Large for reasoning, Small for extraction/fast tasks
+- [ ] **U1.3** Add token usage tracking
+
+### Phase 5 Upgrade — V7 Renderer
+- [ ] **U5.1** Add 3 new layout compositions (magazine-overlay, diagonal-cut, floating-cards)
+- [ ] **U5.2** Improve variety: track last 3 styles, avoid repeating any
+
+### Phase 6 Upgrade — UI/UX + Settings
+- [ ] **U6.1** Add System Health Dashboard to Settings (subprocesses, patterns, quality, Mistral stats)
+- [ ] **U6.2** Add 16-feature validator endpoint (/api/validate-features)
+- [ ] **U6.3** Add export/import for Catalog patterns
+
+### Testing & Deploy
+- [ ] **U7.1** Test 3 website generations
+- [ ] **U7.2** Deploy to Vercel
 
 ### 5 Website Generation Tests (all 16/16 features)
 

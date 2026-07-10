@@ -144,9 +144,41 @@ export function getModelInfo(modelId: string): LLMModel | undefined {
 }
 
 /**
- * Call an LLM with the specified model. Automatically routes to the correct provider.
+ * Call an LLM with retry logic and smart model switching.
+ *
+ * Retry: 3 attempts with exponential backoff (1s, 2s, 4s).
+ * Smart switching: if a Large model fails, retries with Small.
+ * Token tracking: accumulates usage stats on globalThis.
+ *
  * Returns the OpenAI-compatible response, or null on failure.
  */
+
+// Token usage tracker
+interface TokenUsage { total: number; prompt: number; completion: number; calls: number; }
+const usage: TokenUsage = { total: 0, prompt: 0, completion: 0, calls: 0 };
+export function getTokenUsage(): TokenUsage { return { ...usage }; }
+export function resetTokenUsage(): void { usage.total = 0; usage.prompt = 0; usage.completion = 0; usage.calls = 0; }
+
+function trackUsage(data: any): void {
+  if (data?.usage) {
+    usage.total += data.usage.total_tokens || 0;
+    usage.prompt += data.usage.prompt_tokens || 0;
+    usage.completion += data.usage.completion_tokens || 0;
+    usage.calls++;
+  }
+}
+
+// Smart model switching: Large for reasoning, Small for fast tasks
+export function getSmartModel(taskType: 'reasoning' | 'extraction' | 'code' | 'fast'): string {
+  switch (taskType) {
+    case 'reasoning': return 'mistral-large-latest';
+    case 'code': return 'codestral-latest';
+    case 'extraction': return 'mistral-small-latest';
+    case 'fast': return 'mistral-small-latest';
+    default: return 'mistral-large-latest';
+  }
+}
+
 export async function callLLM(
   messages: Array<{ role: string; content: string }>,
   opts: {
@@ -156,54 +188,39 @@ export async function callLLM(
     provider?: LLMProvider;
     groqKey?: string;
     timeoutMs?: number;
+    retries?: number;
   } = {},
 ): Promise<any | null> {
+  const maxRetries = opts.retries ?? 3;
   const settings = getLLMSettings();
-  const model = opts.model || settings.model;
+  let model = opts.model || settings.model;
   const provider = opts.provider || settings.provider;
-  const modelInfo = getModelInfo(model);
-  const actualProvider = provider === 'auto'
-    ? (modelInfo?.provider || 'mistral')
-    : provider;
 
-  // === MISTRAL (PRIMARY — always try first if key is available) ===
-  if (MISTRAL_API_KEY && (actualProvider === 'mistral' || modelInfo?.provider === 'mistral' || actualProvider === 'auto')) {
-    try {
-      const res = await fetch(`${MISTRAL_API_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: opts.temperature ?? 0.5,
-          max_tokens: opts.maxTokens || modelInfo?.maxTokens || 4000,
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(opts.timeoutMs || 30000),
-      });
-      if (res.ok) return await res.json();
-      const errText = await res.text().catch(() => '');
-      console.warn('[llm] Mistral returned', res.status, errText.slice(0, 100));
-    } catch (e) {
-      console.warn('[llm] Mistral failed:', e instanceof Error ? e.message : 'unknown');
+  // === Retry loop with exponential backoff + smart model switching ===
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+      await new Promise(r => setTimeout(r, delay));
+      // Smart switching: on retry 2+, downgrade to mistral-small for reliability
+      if (attempt >= 2 && model.includes('large')) {
+        console.warn('[llm] Retrying with mistral-small-latest (large failed twice)');
+        model = 'mistral-small-latest';
+      }
     }
-  }
 
-  // Route to Groq
-  if (actualProvider === 'groq' || modelInfo?.provider === 'groq') {
-    const groqKey = opts.groqKey || settings.groqKey;
-    if (!groqKey) {
-      console.warn('[llm] No Groq API key configured, falling back to Z.AI');
-    } else {
+    const modelInfo = getModelInfo(model);
+    const actualProvider = provider === 'auto'
+      ? (modelInfo?.provider || 'mistral')
+      : provider;
+
+    // === MISTRAL (PRIMARY) ===
+    if (MISTRAL_API_KEY && (actualProvider === 'mistral' || modelInfo?.provider === 'mistral' || actualProvider === 'auto')) {
       try {
-        const res = await fetch(`${GROQ_API_URL}/chat/completions`, {
+        const res = await fetch(`${MISTRAL_API_URL}/chat/completions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`,
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`,
           },
           body: JSON.stringify({
             model,
@@ -214,36 +231,59 @@ export async function callLLM(
           }),
           signal: AbortSignal.timeout(opts.timeoutMs || 30000),
         });
-        if (res.ok) return await res.json();
-        console.error('[llm] Groq returned', res.status, await res.text().catch(() => ''));
+        if (res.ok) {
+          const data = await res.json();
+          trackUsage(data);
+          return data;
+        }
+        const errText = await res.text().catch(() => '');
+        console.warn(`[llm] Mistral attempt ${attempt + 1}/${maxRetries} returned ${res.status}: ${errText.slice(0, 100)}`);
+        // Don't retry on 4xx (bad request) — only retry on 5xx or network errors
+        if (res.status >= 400 && res.status < 500) break;
       } catch (e) {
-        console.error('[llm] Groq failed:', e);
+        console.warn(`[llm] Mistral attempt ${attempt + 1}/${maxRetries} failed:`, e instanceof Error ? e.message : 'unknown');
       }
     }
-  }
 
-  // Route to Z.AI — sandbox proxy fallback (VPS bridge removed due to string-literal bug)
-  if (actualProvider === 'zai' || modelInfo?.provider === 'zai' || actualProvider === 'auto') {
-    // Sandbox proxy fallback
-    try {
-      const res = await fetch(`${SANDBOX_PROXY_URL}/api/chat/rotated`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': SANDBOX_PROXY_KEY,
-        },
-        body: JSON.stringify({
-          messages,
-          model,
-          temperature: opts.temperature ?? 0.5,
-          max_tokens: opts.maxTokens || modelInfo?.maxTokens || 4000,
-        }),
-        signal: AbortSignal.timeout(opts.timeoutMs || 5000),
-      });
-      if (res.ok) return await res.json();
-      console.error('[llm] Z.AI sandbox proxy returned', res.status);
-    } catch (e) {
-      console.error('[llm] Z.AI sandbox proxy failed:', e);
+    // === GROQ (fallback) ===
+    if (actualProvider === 'groq' || modelInfo?.provider === 'groq') {
+      const groqKey = opts.groqKey || settings.groqKey;
+      if (groqKey) {
+        try {
+          const res = await fetch(`${GROQ_API_URL}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+            body: JSON.stringify({ model, messages, temperature: opts.temperature ?? 0.5, max_tokens: opts.maxTokens || modelInfo?.maxTokens || 4000, stream: false }),
+            signal: AbortSignal.timeout(opts.timeoutMs || 30000),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            trackUsage(data);
+            return data;
+          }
+        } catch (e) {
+          console.error('[llm] Groq failed:', e);
+        }
+      }
+    }
+
+    // === Z.AI (last resort) ===
+    if (actualProvider === 'zai' || modelInfo?.provider === 'zai' || actualProvider === 'auto') {
+      try {
+        const res = await fetch(`${SANDBOX_PROXY_URL}/api/chat/rotated`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': SANDBOX_PROXY_KEY },
+          body: JSON.stringify({ messages, model, temperature: opts.temperature ?? 0.5, max_tokens: opts.maxTokens || modelInfo?.maxTokens || 4000 }),
+          signal: AbortSignal.timeout(opts.timeoutMs || 5000),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          trackUsage(data);
+          return data;
+        }
+      } catch (e) {
+        console.error('[llm] Z.AI failed:', e);
+      }
     }
   }
 

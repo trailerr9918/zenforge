@@ -4096,6 +4096,58 @@ function VAMemoryPanel() {
   );
 }
 
+/* ========== System Health Dashboard ========== */
+function SystemHealthDashboard() {
+  const [health, setHealth] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHealth = () => {
+      fetch('/api/system-health').then(r => r.json()).then(d => { setHealth(d); setLoading(false); }).catch(() => setLoading(false));
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return <div className="rounded-lg p-3 text-center text-[12px]" style={{ background: C.card, border: '1px solid ' + C.borderDef, color: C.textMute }}><Spinner size={14} /> Loading system health...</div>;
+  if (!health) return null;
+
+  return (
+    <div className="rounded-lg p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[13px] font-medium" style={{ color: C.text }}>System Health Dashboard</span>
+        <div className="flex items-center gap-1.5">
+          <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: C.success }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} />
+          <span className="text-[9px] font-mono uppercase" style={{ color: C.success }}>Live</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="Subprocesses" value={`${health.subprocesses.active} active / ${health.subprocesses.total} total`} icon={Cpu} />
+        <StatCard label="Promoted" value={health.subprocesses.promoted} icon={CheckCircle2} accent />
+        <StatCard label="Patterns" value={`${health.patterns.total} (${health.patterns.premium}P + ${health.patterns.vaApproved}VA)`} icon={Layers} />
+        <StatCard label="Mistral calls" value={health.mistral.apiCalls} icon={Brain} />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 text-[10px]" style={{ color: C.textSec }}>
+        <div className="rounded-md p-2" style={{ background: C.surface }}>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: C.textMute }}>Token Usage</div>
+          <div className="mt-0.5 font-mono">{(health.mistral.totalTokens / 1000).toFixed(1)}K total</div>
+          <div className="font-mono text-[9px]" style={{ color: C.textMute }}>{(health.mistral.promptTokens / 1000).toFixed(1)}K prompt · {(health.mistral.completionTokens / 1000).toFixed(1)}K completion</div>
+        </div>
+        <div className="rounded-md p-2" style={{ background: C.surface }}>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: C.textMute }}>VA Memory</div>
+          <div className="mt-0.5 font-mono">{health.memory.totalEntries} entries</div>
+          <div className="font-mono text-[9px]" style={{ color: C.textMute }}>Avg score: {health.memory.avgScore}/30</div>
+        </div>
+        <div className="rounded-md p-2" style={{ background: C.surface }}>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: C.textMute }}>Last Updated</div>
+          <div className="mt-0.5 font-mono text-[9px]">{new Date(health.timestamp).toLocaleTimeString()}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPassword, paywallAdminError, currentRotatingPassword, unlockPaywallAdmin, setPaywallAdminPassword, setPaywallAdminUnlocked, togglePaywallFromAdmin }: {
   paywallEnabled: boolean;
   paywallAdminUnlocked: boolean;
@@ -4394,7 +4446,7 @@ function SettingsTab({ paywallEnabled, paywallAdminUnlocked, paywallAdminPasswor
         )}
         {section === 'integrations' && <div className="space-y-2"><SectionHeader title="Integrations" sub="Connect external services" />{[{ name: 'Z.AI SDK Proxy', key: 'VPS Bridge · glm-4-plus', connected: true }, { name: 'Supabase', key: 'Supabase Project', connected: true }, { name: 'Vercel', key: 'zenforge.site', connected: true }, { name: 'Groq', key: groqKey ? groqKey.slice(0, 12) + '...' : 'Add key in LLM tab', connected: !!groqKey }, { name: 'Modal', key: 'Add MODAL_TOKEN', connected: false }, { name: 'E2B Sandbox', key: 'Add E2B_API_KEY', connected: false }].map((env) => <div key={env.name} className="flex items-center justify-between rounded-md p-2.5" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div><div className="text-[12px] font-medium" style={{ color: C.text }}>{env.name}</div><div className="font-mono text-[10px]" style={{ color: C.textMute }}>{env.key}</div></div><Badge color={env.connected ? 'success' : 'warn'}>{env.connected ? 'Connected' : 'Not set'}</Badge></div>)}</div>}
         {section === 'va-memory' && <VAMemoryPanel />}
-        {section === 'advanced' && <div className="space-y-3"><SectionHeader title="Advanced" sub="System information & maintenance" /><div className="grid grid-cols-2 gap-2"><StatCard label="Renderer" value="V7 Max" icon={Cpu} /><StatCard label="Brain files" value="310" icon={Brain} /><StatCard label="Pattern combos" value="207T" icon={Layers} accent /><StatCard label="API routes" value="35+" icon={Server} /></div><div className="rounded-md p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div className="text-[13px] font-medium" style={{ color: C.error }}>Danger zone</div><p className="mt-1 text-[11px]" style={{ color: C.textMute }}>Clear all locally-cached data and reset studio state.</p><div className="mt-2.5 flex gap-1.5"><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear localStorage?')) localStorage.clear(); }}>Clear cache</Button><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear all logs?')) fetch('/api/logs', { method: 'DELETE' }); }}>Clear logs</Button></div></div></div>}
+        {section === 'advanced' && <div className="space-y-3"><SectionHeader title="Advanced" sub="System information & maintenance" /><div className="grid grid-cols-2 gap-2"><StatCard label="Renderer" value="V7 Max" icon={Cpu} /><StatCard label="Brain files" value="310" icon={Brain} /><StatCard label="Pattern combos" value="207T" icon={Layers} accent /><StatCard label="API routes" value="35+" icon={Server} /></div><SystemHealthDashboard /><div className="rounded-md p-3" style={{ background: C.card, border: '1px solid ' + C.borderDef }}><div className="text-[13px] font-medium" style={{ color: C.error }>Danger zone</div><p className="mt-1 text-[11px]" style={{ color: C.textMute }}>Clear all locally-cached data and reset studio state.</p><div className="mt-2.5 flex gap-1.5"><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear localStorage?')) localStorage.clear(); }}>Clear cache</Button><Button size="sm" variant="danger" icon={Trash2} onClick={() => { if (confirm('Clear all logs?')) fetch('/api/logs', { method: 'DELETE' }); }}>Clear logs</Button></div></div></div>}
       </Panel>
     </div>
   );
