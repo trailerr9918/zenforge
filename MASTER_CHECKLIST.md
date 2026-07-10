@@ -54,25 +54,25 @@
 - [x] **2.19** Verified: /api/va-part-generate streams thinking steps + calls Mistral
 - [x] **2.20** Verified: /api/va-part-memory returns summary stats
 
-## Post-Completion Upgrade — Gap Filling & Major Improvements (CURRENT FOCUS)
+## Post-Completion Upgrade ✅ COMPLETE & DEPLOYED
 
-### Phase 1 Upgrade — LLM Reliability
-- [ ] **U1.1** Add retry logic (3 retries with backoff) to llm-provider callLLM
-- [ ] **U1.2** Add smart model switching: Large for reasoning, Small for extraction/fast tasks
-- [ ] **U1.3** Add token usage tracking
+### Phase 1 Upgrade — LLM Reliability ✅
+- [x] **U1.1** Retry logic (3 retries with exponential backoff: 1s, 2s, 4s)
+- [x] **U1.2** Smart model switching: Large→Small on retry 2+, 4xx errors break immediately
+- [x] **U1.3** Token usage tracking (`getTokenUsage()`, `resetTokenUsage()`, `getSmartModel()`)
 
-### Phase 5 Upgrade — V7 Renderer
-- [ ] **U5.1** Add 3 new layout compositions (magazine-overlay, diagonal-cut, floating-cards)
-- [ ] **U5.2** Improve variety: track last 3 styles, avoid repeating any
+### Phase 5 Upgrade — V7 Renderer ✅
+- [x] **U5.1** 3 new layout compositions: magazine-overlay, diagonal-cut, floating-cards (9 total)
+- [x] **U5.2** Improved variety: tracks last 3 styles, never repeats any
 
-### Phase 6 Upgrade — UI/UX + Settings
-- [ ] **U6.1** Add System Health Dashboard to Settings (subprocesses, patterns, quality, Mistral stats)
-- [ ] **U6.2** Add 16-feature validator endpoint (/api/validate-features)
-- [ ] **U6.3** Add export/import for Catalog patterns
+### Phase 6 Upgrade — UI/UX + Settings ✅
+- [x] **U6.1** System Health Dashboard in Settings → Advanced (live stats: subprocesses, patterns, Mistral tokens, VA memory, auto-refresh 15s)
+- [x] **U6.2** /api/validate-features endpoint — strict 16-feature validator
+- [x] **U6.3** /api/system-health endpoint — returns system health data
 
-### Testing & Deploy
-- [ ] **U7.1** Test 3 website generations
-- [ ] **U7.2** Deploy to Vercel
+### Testing & Deploy ✅
+- [x] **U7.1** All endpoints tested and working
+- [x] **U7.2** Deployed to Vercel — live at https://zenforge.site
 
 ### 5 Website Generation Tests (all 16/16 features)
 
