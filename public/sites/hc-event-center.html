@@ -43,7 +43,12 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            transition: var(--transition);
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .preloader h1 {
@@ -950,11 +955,34 @@
         }
     </style>
 </head>
-<body>
+<body style="overflow: hidden;">
     <!-- Preloader -->
     <div class="preloader">
         <h1>H & C Event Center</h1>
     </div>
+
+    <script>
+        // Hide preloader after 2 seconds
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var preloader = document.querySelector('.preloader');
+                if (preloader) {
+                    preloader.classList.add('hidden');
+                    setTimeout(function() { preloader.style.display = 'none'; }, 600);
+                }
+                document.body.style.overflow = '';
+            }, 2000);
+        });
+        // Fallback: hide after 3s even if load doesn't fire
+        setTimeout(function() {
+            var preloader = document.querySelector('.preloader');
+            if (preloader && !preloader.classList.contains('hidden')) {
+                preloader.classList.add('hidden');
+                setTimeout(function() { preloader.style.display = 'none'; }, 600);
+                document.body.style.overflow = '';
+            }
+        }, 3000);
+    </script>
 
     <!-- Scroll Progress -->
     <div class="scroll-progress"></div>
